@@ -5250,7 +5250,7 @@ function acPlanLoad(rows){
   a.review=parsed.review?parsed.groups[0].review:'';a.planSource=mark;acSaveState();
 }
 function acVifts(){var m={};(st.evals||[]).forEach(function(r){if(r.p==='30-15 IFT'&&r.v==='VIFT'&&r.j&&cpHas(r.team)&&(!m[norm(r.j)]||r.t>m[norm(r.j)].t))m[norm(r.j)]=r;});return m;}
-function acMembers(g){var roster=fullRoster(st.cp.team), gm={};(st.grp||[]).forEach(function(x){if(cpHas(x.team)){var z=PXG.filter(function(q){return q.l===groupForPosition(x.pos);})[0];gm[norm(x.j)]=x.pos==='Portero'?'portero':(z?z.k:'');}});return roster.filter(function(p){return gm[norm(p)]===g.k;});}
+function acMembers(g){var roster=acRoster(), gm={};(st.grp||[]).forEach(function(x){if(x.j){var z=PXG.filter(function(q){return q.l===(groupForPosition(x.pos)||x.g);})[0];gm[norm(x.j)]=(x.pos==='Portero'||x.g==='Porteros')?'portero':(z?z.k:'');}});return roster.filter(function(p){return gm[norm(p)]===g.k;});}
 function acDist(r,g){if(!r||g.kind==='keeper')return null;var pct=num(g.pct),tw=g.kind==='rsa'?6:30,L=num(g.dist),loss=num(g.turn);if(pct==null)pct=90;if(L==null)L=40;if(loss==null)loss=0.7;return Math.round(pxDist(r.val,pct,tw,L,loss).d);}
 function acRpe(g,pi,p){var a=g.players[p]||{},v=num(a.rpe),dur=num(g.real);if(dur==null)dur=num(g.dur);var sr=v!=null&&dur!=null?v*dur:null;return '<div class="rpe6" role="group" aria-label="RPE del bloque">'+Array.from({length:11},function(_,i){return '<button type="button" data-ac="rpe" data-acv="'+g.k+'|'+pi+'|'+p+'|'+i+'" aria-pressed="'+(v===i)+'">'+i+'</button>';}).join('')+'</div><span class="mut" data-ac-srpe="'+g.k+'|'+esc(p)+'">sRPE: '+(sr==null?'–':f1(sr)+' UA')+'</span>';}
 function acPlayer(g,p,pi,V){
@@ -5281,7 +5281,7 @@ function acSummary(){var t=cdate(st.cp.fecha), rows=(st.blq||[]).filter(function
   uniq(rows.map(function(r){return r.grupo;})).forEach(function(g){var a=rows.filter(function(r){return r.grupo===g;}), rp=a.filter(function(r){return r.rpe!=null;}), sr=a.filter(function(r){return r.srpe!=null;});h+='<tr><td>'+esc(g)+'</td><td>'+(rp.length?f1(rp.reduce(function(s,r){return s+r.rpe;},0)/rp.length):'–')+'</td><td>'+(sr.length?f1(sr.reduce(function(s,r){return s+r.srpe;},0)/sr.length):'–')+'</td><td>'+a.length+'</td></tr>';});
   var outside=[];rows.forEach(function(r){var notes=[],n=norm((r.tarea||'')+' '+(r.formato||'')),z=norm(r.notas), f=String(r.formato||'').replace(/\D/g,'');if(/30\W{0,3}30/.test(n)&&r.rpe>=9)notes.push('RPE ≥ 9 en 30"-30"');if(r.caida>15)notes.push('caída sprint > 15 %');var expected=norm(r.grupo).indexOf('centrales')>=0?6:12,mx=n.match(/(\d+)\s*(?:series?\s*[x×]\s*)?(\d+)\s*(?:repeticiones|reps|sprints)/);if(mx)expected=+mx[1]*(+mx[2]||1);if(r.reps!=null&&r.reps<expected)notes.push('repeticiones incompletas');if(z.indexOf('no llego al cono')>=0)notes.push('no llegó al cono');var bm=z.match(/frenadas (\d+)\/(\d+)/);if(bm&&+bm[1]<+bm[2])notes.push('frenadas incompletas');var sm=z.match(/suicidas (\d+)\/(\d+)/);if(sm&&+sm[1]<+sm[2])notes.push('suicidas incompletos');if(notes.length)outside.push(esc(title(r.j))+' ('+notes.join(', ')+')');});
   return h+'</tbody></table></div>'+(outside.length?'<p class="toast a"><b>Fuera de rango:</b> '+outside.join(' · ')+'</p>':'<p class="mut">Sin registros fuera de rango.</p>')+'</section>';}
-function acUnassigned(){var ro=fullRoster(st.cp.team), assigned={};(st.grp||[]).forEach(function(x){if(cpHas(x.team)&&x.pos)assigned[norm(x.j)]=1;});var list=ro.filter(function(p){return !assigned[norm(p)];});if(!list.length)return '';return '<section class="block"><div class="sect"><h2>Sin grupo</h2><span>faltan en el bloque: elige su posición y entran en su grupo</span></div>'+list.map(function(p){return '<div class="pc"><b>'+esc(title(p))+'</b> <select data-acf="assign" data-acp="'+esc(p)+'"><option value="">Sin posición</option>'+PLAYER_POS.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('')+'</select></div>';}).join('')+'</section>';}
+function acUnassigned(){var ro=acRoster(), assigned={};(st.grp||[]).forEach(function(x){if(x.pos||x.g)assigned[norm(x.j)]=1;});var list=ro.filter(function(p){return !assigned[norm(p)];});if(!list.length)return '';return '<section class="block"><div class="sect"><h2>Sin grupo</h2><span>faltan en el bloque: elige su posición y entran en su grupo</span></div>'+list.map(function(p){return '<div class="pc"><b>'+esc(title(p))+'</b> <select data-acf="assign" data-acp="'+esc(p)+'"><option value="">Sin posición</option>'+PLAYER_POS.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('')+'</select></div>';}).join('')+'</section>';}
 function acCard(){var key=acKey(), date=cdate(st.cp.fecha), planRows=planForCp(date).filter(function(r){return true&&(!st.cp.ses||r.ses===st.cp.ses)&&r.rp==='grupos';});if(st.ac[key])acToday();acPlanLoad(planRows);var a=st.ac[key], planned=st.plan.some(function(r){return r.t===date&&cpHas(r.team)&&(!st.cp.ses||r.ses===st.cp.ses);});
   if(!a)return '<article class="cblock" style="margin-top:14px"><div class="blk-h"><h2>Bloque de acondicionamiento por grupos</h2></div><p class="mut">'+(planned?'Añade las tareas específicas de cada grupo y recoge los datos al terminar.':'No hay sesión planificada para esta fecha; puedes usar igualmente el bloque por grupos.')+'</p><button class="btn primary lg" data-ac="add">Añadir bloque por grupos</button>'+acSummary()+'</article>';
   var V=acVifts(), overdue=Object.keys(V).filter(function(k){return oaToday()-V[k].t>56*DAY;}).length;
@@ -5296,7 +5296,7 @@ function acSaveGroup(k,force){var a=st.ac[acKey()],g=a&&a.groups.filter(function
 document.addEventListener('input',function(e){var t=e.target,k=t.getAttribute&&t.getAttribute('data-acf');if(!k)return;var a=st.ac[acKey()],g=a&&a.groups.filter(function(x){return x.k===t.getAttribute('data-acg');})[0];if(!g)return;if(k==='cfg'){var ck=t.getAttribute('data-ack');g[ck]=(ck==='fixedDist'&&t.value==='')?null:t.value;}else if(k==='real')g.real=t.value;else if(k==='metric'){var p=t.getAttribute('data-acp');g.players[p]=g.players[p]||{};g.players[p][t.getAttribute('data-ack')]=t.value;}acSaveState();if(k==='real'||k==='metric'){document.querySelectorAll('[data-ac-srpe]').forEach(function(el){var q=el.getAttribute('data-ac-srpe').split('|'),gg=a.groups.filter(function(x){return x.k===q[0];})[0],pp=gg&&gg.players[q[1]],rp=pp?num(pp.rpe):null,du=gg?num(gg.real):null;if(du==null&&gg)du=num(gg.dur);el.textContent='sRPE: '+(rp!=null&&du!=null?f1(rp*du)+' UA':'–');});}});
 document.addEventListener('change',function(e){var t=e.target,k=t.getAttribute&&t.getAttribute('data-acf');if(k==='assign'){var p=t.getAttribute('data-acp');savePlayerPosition(p,homeTeam(p),t.value).then(function(){var y=window.scrollY;render(true);window.scrollTo(0,y);},function(er){st.gmsg={k:'err',t:saveError(er,'GRUPOS'),p:permCode(er)};render(true);});}else if(k==='cfg'){var y2=window.scrollY;render(true);window.scrollTo(0,y2);}});
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-ac]');if(!b)return;var action=b.getAttribute('data-ac'),v=b.getAttribute('data-acv')||'';
-  if(action==='add'){acToday();acSaveState();var y=window.scrollY;render(true);window.scrollTo(0,y);return;}
+  if(action==='add'){acToday();acSaveState();acAddToPlan();var y=window.scrollY;render(true);window.scrollTo(0,y);return;}
   if(action==='save'){var q=v.split('|');acSaveGroup(q[0],q[1]==='1');return;}
   if(action==='warn'){var g=st.ac[acKey()].groups.filter(function(x){return x.k===v;})[0];if(g)g.warn=false;render(true);return;}
   if(action==='abs'){var z=v.split('|'),g2=st.ac[acKey()].groups.filter(function(x){return x.k===z[0];})[0];if(g2){g2.players[z[1]]=g2.players[z[1]]||{};g2.players[z[1]].abs=!g2.players[z[1]].abs;acSaveState();var y2=window.scrollY;render(true);window.scrollTo(0,y2);}return;}
@@ -5375,6 +5375,23 @@ function acFromRows(a,rows){
     if(r.tr!=null&&g.kind==='rsa')g.recovery=r.tr;
     g.review='';
   });
+}
+
+/* --- quién entra en el bloque: la plantilla de la sesión + los invitados; la posición vale venga del equipo que venga --- */
+function acRoster(){var ro=fullRoster(st.cp.team).slice();(st.extra||[]).forEach(function(p){if(ro.indexOf(p)<0)ro.push(p);});return ro.sort(esAlpha);}
+
+/* --- «Añadir bloque por grupos» en la app también lo escribe en PLAN (hoja de microciclos), después del calentamiento --- */
+function acAddToPlan(){
+  var a=st.ac[acKey()], cp=st.cp, t=cdate(cp.fecha); if(!a||t==null)return;
+  var rows=planForCp(t).filter(function(r){return !cp.ses||r.ses===cp.ses;});
+  if(rows.some(function(r){return r.rp==='grupos';}))return;   /* ya está en la hoja */
+  var ords=rows.map(function(r){return r.ord;}).filter(function(x){return x!=null;}).sort(function(x,y){return x-y;});
+  var ord=ords.length?ords[0]+0.5:1, ses=(rows[0]&&rows[0].ses)||cp.ses||'', mi=(String(ses).match(/^(M\d+)/)||[])[1]||'';
+  var objs=a.groups.filter(function(g){return g.k!=='portero'||acMembers(g).length;}).map(function(g){return {'Fecha':fd(t),'Equipo':cp.team==='AMBOS'?'AMBOS':cp.team,'Sesión':ses,'Orden':ord,'Parte':'Parte principal','Bloque':'VIFT por posiciones','Ejercicio o tarea':g.task||'','Descripción':g.fmt||'','Tipo':'Resistencia','Duración (min)':g.dur||'','Series':g.series||'','Repeticiones':g.target||'','Pausa (s)':g.kind==='rsa'?(g.recovery==null?20:g.recovery):'','Intensidad (%)':g.pct||'','Distancia (m)':g.dist||'','RPE por':'grupos','Grupo':g.n,'Micro':mi};});
+  mcp.callTool(SERVER,'get_values',{spreadsheetId:SHEET_ID,range:'PLAN!A1:AZ1'}).then(function(res){
+    var h=((jp(res.payload).values)||[[]])[0]||[]; if(!h.length)return;
+    return appendTo('PLAN!A1',objs.map(function(o){return h.map(function(k){return o[k]==null?'':o[k];});})).then(function(){st.gmsg={k:'ok',t:'Bloque guardado también en tu hoja de microciclos (PLAN). Puedes cambiarlo aquí sobre la marcha.'};return loadPlan(false);});
+  }).then(function(){var y=window.scrollY;render(true);window.scrollTo(0,y);},function(){});
 }
 
 /* --- posición del bloque dentro de la sesión: por defecto según su Orden en PLAN; se mueve con Subir / Bajar --- */
