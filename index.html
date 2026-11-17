@@ -56,7 +56,7 @@
 
   /* ---- sincronización ---- */
   function fetchJ(url,opt,ms){
-    var ac=('AbortController' in window)?new AbortController():null, t=setTimeout(function(){if(ac)ac.abort();},ms||45000);
+    var ac=('AbortController' in window)?new AbortController():null, t=setTimeout(function(){if(ac)ac.abort();},ms||70000);
     if(ac)opt.signal=ac.signal;
     return fetch(url,opt).then(function(r){clearTimeout(t);return r.text();}).then(function(tx){try{return JSON.parse(tx);}catch(e){throw new Error('La dirección no devuelve datos de la app. Revisa la URL y que la implementación sea «Cualquier usuario».');}});
   }
@@ -68,7 +68,7 @@
     lastTry=Date.now(); var sent=queue.slice();
     syncing=fetchJ(c.url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:c.key,ops:sent,pull:true})})
     .then(function(res){
-      if(!res||!res.ok){var e=res&&res.error; throw new Error(e==='clave'?'Clave incorrecta: cópiala otra vez desde la hoja (menú Mateo QP → Conectar la app).':'Google: '+(e||'error'));}
+      if(!res||!res.ok){var e=res&&res.error; throw new Error(e==='ocupado'?'ocupado':e==='clave'?'Clave incorrecta: cópiala otra vez desde la hoja (menú Mateo QP → Conectar la app).':'Google: '+(e||'error'));}
       var done={}; (res.done||[]).forEach(function(id){done[id]=1;});
       queue=queue.filter(function(o){return !done[o.id];});
       var changed=[];
@@ -80,7 +80,11 @@
       }
       lastErr=''; return saveAll().then(function(){notify(changed);return true;});
     })
-    .catch(function(e){lastErr=(e&&e.name==='AbortError')?'Google tarda en responder; se reintentará':(e&&e.message)||'No se pudo sincronizar';return false;})
+    .catch(function(e){
+      var m=(e&&e.message)||'', net=(e&&e.name==='AbortError')||/fetch|load failed|network|ocupado/i.test(m);
+      lastErr=net?'Google no ha respondido; reintento en 20 s (lo guardado sigue en el iPad)':(m||'No se pudo sincronizar');
+      if(net){clearTimeout(sync.retry);sync.retry=setTimeout(function(){lastTry=0;sync();},20000);}
+      return false;})
     .then(function(x){syncing=null;paint();return x;});
     paint(); return syncing;
   }
