@@ -5,8 +5,19 @@
    La app lee siempre de aquí (al instante, sin conexión). Lo que guardas entra en una cola
    que se sube a tus hojas en cuanto hay red; luego se baja la versión buena de Google. */
 (function(){
+  var DEFAULT_URL='https://script.google.com/macros/s/AKfycbwc3olKYGCV3EhmonuU-YqbjGDY4EtcDLfZx2FOlMlprLYZkZWp4wtcIykR1aax5PoV/exec';
+  var WRITE_OK={staff:['PUNTOS','DISPONIBILIDAD'],jugador:['Respuestas de formulario 1','CARGA']};
   var DBN='mateoqp', ST='kv', LSK='mqp-conn', MICRO_URL='https://docs.google.com/spreadsheets/d/1e-pCh7Sq9YhXqytNh3q3FMKEWYFaYc27cn6s-khbWBc/edit';
-  var db=null, tabs={}, queue=[], planMap=[], meta={at:0}, watchers=[], syncing=null, lastErr='', lastTry=0, onChange=null;
+  var db=null, tabs={}, queue=[], planMap=[], meta={at:0}, watchers=[], syncing=null, lastErr='', lastRej='', lastTry=0, onChange=null;
+  function role(){var c=cfg();return !c?'':c.key?'admin':(c.rol||'');}
+  function profile(){var c=cfg()||{};return {rol:role(),nombre:c.nombre||'',equipo:c.equipo||''};}
+  function wipe(){tabs={};queue=[];planMap=[];meta={at:0};return saveAll();}
+  function logout(msg){try{localStorage.removeItem(LSK);}catch(e){} wipe().then(function(){try{sessionStorage.setItem('mqp-msg',msg||'');}catch(e){} location.reload();});}
+  function login(tipo,nombre,pin){
+    return fetchJ(DEFAULT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({login:{tipo:tipo,nombre:nombre,pin:pin}})},40000)
+    .then(function(r){if(!r||!r.ok)throw new Error((r&&r.error)||'No se pudo entrar');
+      return wipe().then(function(){setCfg({url:DEFAULT_URL,t:r.t,rol:r.perfil.rol,nombre:r.perfil.nombre,equipo:r.perfil.equipo});lastTry=0;return sync();}).then(function(){return r.perfil;});});
+  }
   function cfg(){try{return JSON.parse(localStorage.getItem(LSK)||'null');}catch(e){return null;}}
   function setCfg(c){try{localStorage.setItem(LSK,JSON.stringify(c));}catch(e){}}
   function idb(){return new Promise(function(res,rej){var r=indexedDB.open(DBN,1);r.onupgradeneeded=function(){r.result.createObjectStore(ST);};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
@@ -62,12 +73,14 @@
   }
   function hashTab(v){var s=JSON.stringify(v||[]),h=0;for(var i=0;i<s.length;i+=7)h=(h*31+s.charCodeAt(i))|0;return s.length+':'+h;}
   function sync(){
-    var c=cfg(); if(!c||!c.url||!c.key){lastErr='';paint();return Promise.resolve(false);}
+    var c=cfg(); if(!c||!c.url||!(c.key||c.t)){lastErr='';paint();return Promise.resolve(false);}
     if(syncing)return syncing;
     if(navigator.onLine===false){lastErr='Sin conexión: los datos quedan guardados en el iPad';paint();return Promise.resolve(false);}
     lastTry=Date.now(); var sent=queue.slice();
-    syncing=fetchJ(c.url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:c.key,ops:sent,pull:true})})
+    syncing=fetchJ(c.url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(c.key?{k:c.key,ops:sent,pull:true}:{t:c.t,ops:sent,pull:true})})
     .then(function(res){
+      if(res&&res.error==='sesion'){logout('Tu sesión ha caducado: vuelve a entrar.');throw new Error('Sesión cerrada');}
+      if(res&&res.rejected)lastRej='Hay '+res.rejected+' cambios que tu perfil no puede guardar.';
       if(!res||!res.ok){var e=res&&res.error; throw new Error(e==='ocupado'?'ocupado':e==='clave'?'Clave incorrecta: cópiala otra vez desde la hoja (menú Mateo QP → Conectar la app).':'Google: '+(e||'error'));}
       var done={}; (res.done||[]).forEach(function(id){done[id]=1;});
       queue=queue.filter(function(o){return !done[o.id];});
@@ -104,6 +117,9 @@
         if(opts&&opts.cache&&opts.cache.refresh&&Date.now()-lastTry>20000)sync();
         return Promise.resolve(res(args.range));
       }
+      var rl=role(), wt=pr(args.range||'').tab;
+      if((tool==='update_values'||tool==='append_values')&&WRITE_OK[rl]&&(tool==='update_values'||WRITE_OK[rl].indexOf(wt)<0))
+        return Promise.reject({code:'solo_lectura',message:'Con tu perfil no se puede guardar aquí.'});
       if(tool==='update_values'){
         var p=pr(args.range), vals=args.values||[];
         if(p.tab==='PLAN'){
@@ -132,14 +148,46 @@
 
   /* ---- estado e interfaz de Ajustes ---- */
   function hm(t){var d=new Date(t);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
-  function info(){var c=cfg();return {cfg:!!(c&&c.url&&c.key),pending:queue.length,at:meta.at,err:lastErr,syncing:!!syncing};}
+  function info(){var c=cfg();return {cfg:!!(c&&c.url&&(c.key||c.t)),pending:queue.length,at:meta.at,err:lastErr,syncing:!!syncing};}
   function statusText(){
     var i=info();
     if(!i.cfg)return {k:'warn',t:'Sin conectar con Google · datos solo en el iPad'};
     if(i.syncing)return {k:'load',t:'Sincronizando con Google…'};
     if(i.err)return {k:i.pending?'warn':'err',t:(i.pending?i.pending+' cambios esperando · ':'')+i.err};
     if(i.pending)return {k:'warn',t:i.pending+' cambios esperando para subir'};
-    return {k:'ok',t:'Sincronizado con Google '+(i.at?hm(i.at):'')};
+    return {k:lastRej?'warn':'ok',t:(lastRej?lastRej+' · ':'')+'Sincronizado con Google '+(i.at?hm(i.at):'')};
+  }
+  /* ---- pantalla de entrada: jugador / cuerpo técnico / administración ---- */
+  var LCSS='.qplog{position:fixed;inset:0;z-index:90;overflow:auto;background:radial-gradient(700px 420px at 90% -10%,rgba(200,16,46,.45),transparent 70%),#0B0B0C;color:#F7F7F8;display:flex;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 18px 28px}'+
+    '.qplog .box{width:100%;max-width:440px}.qplog h1{font:900 italic 40px/1 "Saira",sans-serif;text-transform:uppercase;margin:0}.qplog .qptag{font:600 13px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#C4C4CB;margin:8px 0 26px;display:flex;gap:8px;align-items:center}'+
+    '.qplog .qptag:before{content:"";width:26px;height:5px;background:#E5233A;clip-path:polygon(0 50%,100% 0,100% 100%)}'+
+    '.qplog .big{display:flex;align-items:center;gap:14px;width:100%;min-height:76px;margin:0 0 12px;padding:0 20px;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:700 20px "Saira",sans-serif;cursor:pointer;text-align:left}'+
+    '.qplog .big.r{background:#C8102E;border-color:transparent}.qplog .big small{display:block;font:400 13px "IBM Plex Sans",sans-serif;color:rgba(255,255,255,.75)}'+
+    '.qplog label{display:block;font-size:14px;color:#C4C4CB;margin:16px 0 6px}.qplog input{width:100%;min-height:56px;border-radius:14px;border:1px solid rgba(255,255,255,.25);background:#17171A;color:#fff;font-size:20px;padding:0 16px}'+
+    '.qplog input.pin{letter-spacing:.5em;text-align:center;font:700 28px "Saira",sans-serif}.qplog .go{margin-top:20px}.qplog .lnk{background:none;border:0;color:#C4C4CB;text-decoration:underline;font-size:14px;min-height:44px;cursor:pointer;margin-top:10px}'+
+    '.qplog .msg{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(229,35,58,.18);color:#FFB3BB;font-size:15px}.qplog .msg:empty{display:none}';
+  function openLogin(){
+    if(document.getElementById('qplog'))return;
+    var s=document.createElement('style'); s.textContent=LCSS; document.head.appendChild(s);
+    var ov=document.createElement('div'); ov.className='qplog'; ov.id='qplog'; var msg=''; try{msg=sessionStorage.getItem('mqp-msg')||'';sessionStorage.removeItem('mqp-msg');}catch(e){}
+    function home(){ov.innerHTML='<div class="box"><h1>Mateo QP</h1><div class="qptag">Preparación física</div>'+
+      '<button class="big r" data-l="jugador">⚽<span>Soy jugador<small>Mis datos, wellness, RPE y puntos</small></span></button>'+
+      '<button class="big" data-l="staff">📋<span>Cuerpo técnico<small>Entrenadores, utillero…</small></span></button>'+
+      '<button class="lnk" data-l="admin">Administración</button><div class="msg" id="qplm">'+msg+'</div></div>';}
+    function form(t){ov.innerHTML='<div class="box"><h1>'+(t==='jugador'?'Jugador':'Cuerpo técnico')+'</h1><div class="qptag">Entrar</div>'+
+      '<label for="ql-n">Nombre y apellido</label><input id="ql-n" autocomplete="name" autocapitalize="words" placeholder="Ej.: Hugo Dorta">'+
+      '<label for="ql-p">'+(t==='jugador'?'PIN (4 cifras, te lo da Mateo)':'Código del cuerpo técnico')+'</label><input id="ql-p" class="pin" '+(t==='jugador'?'inputmode="numeric" maxlength="4" pattern="[0-9]*"':'autocapitalize="characters" maxlength="10"')+' autocomplete="off">'+
+      '<button class="big r go" data-l="go" data-t="'+t+'">Entrar</button><button class="lnk" data-l="back">Volver</button><div class="msg" id="qplm"></div></div>';
+      setTimeout(function(){var n=ov.querySelector('#ql-n');if(n)n.focus();},50);}
+    home(); document.body.appendChild(ov);
+    ov.addEventListener('click',function(e){var b=e.target.closest('[data-l]');if(!b)return;var a=b.getAttribute('data-l');
+      if(a==='jugador'||a==='staff')form(a); else if(a==='back')home(); else if(a==='admin'){ov.remove();openSettings();}
+      else if(a==='go'){var n=ov.querySelector('#ql-n').value.trim(),p=ov.querySelector('#ql-p').value.trim(),m=ov.querySelector('#qplm');
+        if(!n||!p){m.textContent='Rellena nombre y '+(b.getAttribute('data-t')==='jugador'?'PIN':'código')+'.';return;}
+        b.disabled=true;b.textContent='Entrando…';m.textContent='';
+        login(b.getAttribute('data-t'),n,p).then(function(){location.reload();},function(er){b.disabled=false;b.textContent='Entrar';m.textContent=er.message||'No se pudo entrar';});}
+    });
+    ov.addEventListener('keydown',function(e){if(e.key==='Enter'){var g=ov.querySelector('[data-l="go"]');if(g)g.click();}});
   }
   function paint(){
     var el=document.getElementById('stat'), t=document.getElementById('stat-t'); if(!el||!t)return;
@@ -154,6 +202,14 @@
     '.qpgear{flex:none}';
   function openSettings(){
     var c=cfg()||{}, ov=document.createElement('div'); ov.className='qpov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+    if(c.t){   /* jugador o cuerpo técnico: solo su sesión */
+      ov.innerHTML='<div class="qpdlg"><h2>Mi sesión</h2><p><b>'+String(c.nombre||'').replace(/</g,'&lt;')+'</b> · '+(c.rol==='jugador'?'Jugador':'Cuerpo técnico')+'</p><div class="qpst" id="qp-st" role="status"></div>'+
+        '<div class="row"><button class="btn lg" data-qp="sync">Sincronizar ahora</button><button class="btn lg" data-qp="out" style="color:var(--red)">Cerrar sesión</button></div><div class="row"><button class="btn primary" data-qp="close">Cerrar</button></div></div>';
+      document.body.appendChild(ov); paint();
+      ov.addEventListener('click',function(e){if(e.target===ov)return ov.remove();var b=e.target.closest('[data-qp]');if(!b)return;var a=b.getAttribute('data-qp');
+        if(a==='close')ov.remove(); else if(a==='sync'){lastTry=0;sync();} else if(a==='out'){if(queue.length&&!confirm('Hay '+queue.length+' cambios sin subir. ¿Salir igualmente?'))return; logout();}});
+      return;
+    }
     ov.innerHTML='<div class="qpdlg"><h2>Ajustes</h2><p>Los datos viven en este iPad y se copian a tus hojas de Google cuando hay conexión.</p>'+
       '<h3>Conexión con Google</h3><p>Copia la URL y la clave desde la hoja de microciclos: menú <b>Mateo QP → Conectar la app</b>.</p>'+
       '<label for="qp-url">URL de la app (termina en /exec)</label><input id="qp-url" type="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="'+(c.url||'').replace(/"/g,'&quot;')+'" placeholder="https://script.google.com/macros/s/…/exec">'+
@@ -197,9 +253,10 @@
         setInterval(function(){if(document.visibilityState!=='hidden')sync();},90000);
         window.addEventListener('online',function(){sync();});
         document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-lastTry>30000)sync();});
-        if(!cfg()&&!Object.keys(tabs).length)setTimeout(openSettings,700);
+        if(!cfg())openLogin();
         return api;});
     },
+    role:role, profile:profile, logout:logout, openLogin:openLogin, tabs:function(){return tabs;},
     sync:sync, info:info, statusText:statusText, paint:paint, openSettings:openSettings, downloads:downloads, microUrl:MICRO_URL,
     set onChange(f){onChange=f;}
   };
@@ -3671,7 +3728,7 @@ function paintShell(){
   document.getElementById('crests').innerHTML=key?'<img src="'+CREST[key]+'" alt="Escudo '+esc(teamName(st.team))+'">':'<img src="'+CREST.juvenil+'" alt="Escudo Esférico"><img src="'+CREST.regional+'" alt="Escudo Bahía de Santiago">';
   document.getElementById('brand-sub').textContent=key?teamName(st.team):'Juvenil y Regional';
   document.getElementById('logo-av').innerHTML=mqAvatar(); document.getElementById('mini').innerHTML=mqAvatar();
-  document.getElementById('nav-view').innerHTML='<small>Menú</small>'+[['carga','Carga de entrenamiento'],['partido','Carga de partido'],['bienestar','Bienestar'],['cal','Calendario'],['hoy','Plantilla'],['eval','Evaluaciones']].map(function(x){return '<button data-act="view" data-v="'+x[0]+'" aria-pressed="'+(v===x[0])+'">'+ICON[x[0]]+'<span>'+x[1]+'</span></button>';}).join('');
+  document.getElementById('nav-view').innerHTML='<small>Menú</small>'+[['carga','Carga de entrenamiento'],['partido','Carga de partido'],['bienestar','Bienestar'],['cal','Calendario'],['hoy','Plantilla'],['eval','Evaluaciones'],['puntos','Puntos']].map(function(x){return '<button data-act="view" data-v="'+x[0]+'" aria-pressed="'+(v===x[0])+'">'+ICON[x[0]]+'<span>'+x[1]+'</span></button>';}).join('');
   var items=[['TODOS','Todos los equipos',null],['JUVENIL ESFÉRICO','Juvenil · Esférico FC','juvenil'],['REGIONAL BAHÍA SANTIAGO','Regional · Bahía de Santiago','regional']];
   document.getElementById('nav-team').innerHTML='<small>Equipo</small>'+items.map(function(t){return '<button data-act="team" data-v="'+esc(t[0])+'" aria-pressed="'+(st.team===t[0])+'">'+(t[2]?'<img src="'+CREST[t[2]]+'" alt="">':'<svg class="ball" viewBox="-52 -52 104 104" aria-hidden="true">'+mqBall(0,0,50)+'</svg>')+'<span>'+t[1]+'</span></button>';}).join('');
   document.getElementById('legend2').innerHTML=v==='carga'?
@@ -3680,14 +3737,14 @@ function paintShell(){
     v==='partido'?'<div>sRPE del partido = RPE al acabar × minutos jugados (UA)</div><div>Se guarda en CARGA y cuenta en ACWR y alertas</div><div><i style="background:var(--red)"></i>Alerta roja: RPE 9–10 con 30 min o más</div><div><i style="background:var(--st-a)"></i>Ámbar: RPE 8 o +25 % sobre su media</div>':
     v==='eval'?'<div>Evaluar: pruebas cada cierto tiempo</div><div>Monitorizar: datos a diario (Carga)</div><div><i style="background:var(--red)"></i>Punto rojo: a más de 1 DE del grupo</div>':
     '<div>Escala de 1 (mejor) a 7 (peor)</div><div><i style="background:var(--st-r)"></i>Rojo: índice desde '+st.th.ir+' o 2 parámetros desde '+st.th.pr+'</div><div><i style="background:var(--st-a)"></i>Ámbar: índice desde '+st.th.ia+' o 1 parámetro desde '+st.th.pr+'</div><div><i style="background:var(--st-v)"></i>Verde: el resto</div>';
-  var sec=v==='partido'?'Carga de partido':v==='carga'?'Carga':v==='eval'?'Evaluaciones':v==='hoy'?'Plantilla':v==='cal'?'Calendario':'Bienestar', sub=v==='partido'?'sRPE por jugador':v==='carga'?CSUB[st.ctab]:v==='eval'?ESUB[st.etab]:v==='hoy'?(st.htab==='disp'?'Disponibilidad':st.htab==='jugadores'?'Jugadores':'Hoy'):v==='cal'?(st.ktab==='partidos'?'Partidos':'Mes'):{dia:'Microciclo',jugador:'Jugador',evolucion:'Evolución',campo:'Cuestionario en campo'}[st.tab];
+  var sec=v==='puntos'?'Puntos':v==='partido'?'Carga de partido':v==='carga'?'Carga':v==='eval'?'Evaluaciones':v==='hoy'?'Plantilla':v==='cal'?'Calendario':'Bienestar', sub=v==='puntos'?'Adherencia':v==='partido'?'sRPE por jugador':v==='carga'?CSUB[st.ctab]:v==='eval'?ESUB[st.etab]:v==='hoy'?(st.htab==='disp'?'Disponibilidad':st.htab==='jugadores'?'Jugadores':'Hoy'):v==='cal'?(st.ktab==='partidos'?'Partidos':'Mes'):{dia:'Microciclo',jugador:'Jugador',evolucion:'Evolución',campo:'Cuestionario en campo'}[st.tab];
   if(typeof expSidebar==='function')document.getElementById('legend2').innerHTML+=expSidebar()+(st.expMsg?'<small class="expmsg" role="status">'+esc(st.expMsg)+'</small>':'');
   document.getElementById('crumb').innerHTML='<span class="cr-x"><b>'+esc(TEAM_FULL[st.team])+'</b> / </span>'+sec+' / <b>'+sub+'</b>';
   document.getElementById('side').className='side'+(st.menu?' open':'');
   document.querySelector('.menu').setAttribute('aria-expanded',!!st.menu);
 }
 function kickerText(){
-  if(st.view==='partido')return 'Partido · sRPE por jugador';
+  if(st.view==='puntos')return 'Puntos · adherencia y actitud';if(st.view==='partido')return 'Partido · sRPE por jugador';
   if(st.view==='hoy')return st.htab==='disp'?'Plantilla · quién puede entrenar y jugar':st.htab==='jugadores'?'Plantilla · altas y posiciones':'Plantilla · alertas de hoy';
   if(st.view==='cal')return st.ktab==='partidos'?'Calendario · partidos de la temporada':'Calendario · partidos y carga del mes';
   if(st.view==='bienestar'&&st.tab==='campo')return 'Bienestar · cuestionario antes de la sesión';
@@ -3728,6 +3785,7 @@ function render(force,soft){
   } else if(v==='hoy'){html=st.htab==='disp'?cDisp():st.htab==='jugadores'?cJug():cHoy();} else if(v==='cal'){html=cCal();} else if(v==='eval'){
     html=st.etab==='jugador'?ePlayer():st.etab==='nueva'?eNueva():st.etab==='presc'?pxView():eRanking();
     html+='<p class="foot">'+st.evals.length+' '+plural(st.evals.length,'valor','valores')+' en la pestaña EVALUACIONES de tu hoja.</p>';
+  } else if(v==='puntos'){html=ptsView();
   } else if(st.tab==='campo'){html=cWF();
   } else {
     if(!st.rows.length){app.innerHTML=stateMsg('La pestaña DATOS no tiene filas todavía','Comprueba que el formulario tiene respuestas de jugadores que están en la pestaña JUGADORES de tu hoja.',true);return;}
@@ -3737,7 +3795,7 @@ function render(force,soft){
   /* con seis pestañas la barra se desplaza: la elegida queda a la vista sin mover la página */
   var tb=app.querySelector('.tabs'), ts=tb&&tb.querySelector('.tab[aria-selected="true"]');
   if(tb&&ts&&tb.scrollWidth>tb.clientWidth)tb.scrollLeft=Math.max(0,ts.getBoundingClientRect().left-tb.getBoundingClientRect().left+tb.scrollLeft-(tb.clientWidth-ts.offsetWidth)/2);
-  if(v==='bienestar'){if(st.tab!=='campo')draw();} else if(v!=='cal'&&v!=='partido')drawC();
+  if(v==='bienestar'){if(st.tab!=='campo')draw();} else if(v!=='cal'&&v!=='partido'&&v!=='puntos')drawC();
 }
 
 /* ---------- eventos ---------- */
@@ -4708,7 +4766,7 @@ function loadExtra(force){
     loadSheet(OB_TAB+'!A1:E1000',ingestObj,'ostat',force),
     loadSheet('GRUPOS!A1:E1000',ingestGroups,'gstat',force),
     loadSheet('BLOQUES!A1:N5000',ingestBlocks,'bstat',force),
-    loadSheet('ENTRENOS!A1:F200',ingestTrainings,'tstat',force)
+    loadSheet('ENTRENOS!A1:F200',ingestTrainings,'tstat',force),loadSheet('PUNTOS!A1:H20000',ingestPts,'ptsstat',force),loadSheet('PUNTOS_CONCEPTOS!A1:D100',ingestPtc,'ptcstat',force),loadSheet('ACCESOS!A1:F500',ingestAcc,'accstat',force)
   ]);
 }
 
@@ -5468,8 +5526,222 @@ document.addEventListener('click',function(e){
   .then(function(){st.saving=false;re();});
 },true);
 
+/* ===== Mateo QP · PUNTOS (adherencia y actitud): registro rápido, ranking y accesos ===== */
+st.pts=[];st.ptc=[];st.acc=[];
+st.pt={fecha:todayISO(),team:'',sel:{},conc:'',notas:'',msg:null,per:'temp',saving:false};
+if(typeof ICON==='object')ICON.puntos='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/></svg>';
+function ingestPts(payload){var v=parseValues(payload),out=[];if(!v.length){st.pts=out;return;}var c=colFinder(v);var C={t:c('fecha'),team:c('equipo'),j:c('jugador'),con:c('concepto'),p:c('puntos'),n:c('notas'),by:c('registrado por')};
+  v.slice(1).forEach(function(r,ix){var t=cdate(r[C.t]),p=num(r[C.p]);if(t==null||p==null||!r[C.j])return;out.push({t:t,team:String(r[C.team]||'').trim(),j:String(r[C.j]).trim(),con:String(r[C.con]||'').trim(),p:p,n:String(r[C.n]||''),by:String(r[C.by]||''),row:ix+2});});st.pts=out;}
+function ingestPtc(payload){var v=parseValues(payload),out=[];v.slice(1).forEach(function(r){var p=num(r[1]);if(!r[0]||p==null)return;out.push({c:String(r[0]).trim(),p:p,tipo:norm(r[2]),d:String(r[3]||'')});});st.ptc=out;}
+function ingestAcc(payload){var v=parseValues(payload),out=[];v.slice(1).forEach(function(r){if(!r[1])return;out.push({tipo:norm(r[0]),n:String(r[1]).trim(),team:String(r[2]||'').trim(),pin:String(r[3]||'').trim(),act:norm(r[4])!=='no'});});st.acc=out;}
+function ptAutoVal(k){var c=st.ptc.filter(function(x){return x.tipo.indexOf('autom')===0&&norm(x.c).indexOf(k)===0;})[0];return c?c.p:1;}
+function ptRanking(team,days){
+  var from=days?oaToday()-days*DAY:-Infinity, P={}, aw=ptAutoVal('wellness'), ar=ptAutoVal('rpe');
+  fullRoster(team).forEach(function(p){P[norm(p)]={j:p,man:0,auto:0,neg:0};});
+  var add=function(j,v,t,auto){var k=norm(j),o=P[k];if(!o||t<from)return;if(auto)o.auto+=v;else{o.man+=v;if(v<0)o.neg+=v;}};
+  st.pts.forEach(function(r){if(r.team===team||!r.team)add(r.j,r.p,r.t,false);});
+  var sw={};st.rows.forEach(function(r){var k=norm(r.j)+'|'+r.t;if(r.team!==team||sw[k])return;sw[k]=1;add(r.j,aw,r.t,true);});
+  var sr={};st.carga.forEach(function(r){var k=norm(r.j)+'|'+r.t;if(r.rpe==null||r.abs||twide(r.j)||sr[k])return;sr[k]=1;add(r.j,ar,r.t,true);});
+  return Object.keys(P).map(function(k){var o=P[k];o.tot=o.man+o.auto;return o;}).sort(function(a,b){return b.tot-a.tot||esAlpha(a.j,b.j);});
+}
+function ptsView(){
+  var S=st.pt;if(!S.team)S.team=defTeam();
+  var role=window.QPDB?QPDB.role():'admin', who=role==='admin'?'Mateo':((QPDB.profile()||{}).nombre||'Cuerpo técnico');
+  var conc=st.ptc.filter(function(c){return c.tipo.indexOf('autom')!==0;}), pos=conc.filter(function(c){return c.p>0;}), neg=conc.filter(function(c){return c.p<0;});
+  var ro=fullRoster(S.team), nSel=ro.filter(function(p){return S.sel[p];}).length, cc=conc.filter(function(c){return c.c===S.conc;})[0];
+  var h='<div class="titlerow"><h1>Puntos</h1><span class="chipT">'+esc(teamName(S.team))+'</span></div><p class="finding">Suma o resta por puntualidad, preventivo, implicación y respeto. El wellness y el RPE que envía cada jugador suman solos. Cada jugador ve sus puntos y el ranking de su equipo.</p>';
+  h+='<section class="block"><div class="sect"><h2>Registrar</h2><span>elige concepto, toca jugadores y guarda</span></div><div class="filters" style="padding-top:4px">'+
+    '<label class="field"><span>Fecha</span><input type="date" data-pt="fecha" value="'+esc(S.fecha)+'"></label>'+
+    '<div class="seg" role="group" aria-label="Equipo">'+TEAMS.map(function(t){return '<button data-ptc="team" data-v="'+esc(t)+'" aria-pressed="'+(S.team===t)+'">'+esc(teamName(t))+'</button>';}).join('')+'</div></div>';
+  var chip=function(c){return '<button class="chip" data-ptc="conc" data-v="'+esc(c.c)+'" aria-pressed="'+(S.conc===c.c)+'">'+esc(c.c)+' <small>'+(c.p>0?'+':'')+c.p+'</small></button>';};
+  h+='<p class="lblx">Positivos</p><div class="chips">'+pos.map(chip).join('')+'</div><p class="lblx" style="margin-top:12px">Negativos</p><div class="chips">'+neg.map(chip).join('')+'</div>';
+  h+='<div class="sect" style="margin-top:18px"><h2 style="font-size:16px">Jugadores ('+nSel+')</h2><span><button class="linkbtn" style="display:inline;min-height:0" data-ptc="all">Todos</button> · <button class="linkbtn" style="display:inline;min-height:0" data-ptc="none">Ninguno</button></span></div><div class="chips">'+
+    ro.map(function(p){return '<button class="chip" data-ptc="p" data-v="'+esc(p)+'" aria-pressed="'+(!!S.sel[p])+'">'+esc(title(p))+'</button>';}).join('')+'</div>';
+  h+='<div class="fld" style="margin-top:12px;max-width:520px"><label for="pt-n">Nota (opcional)</label><input id="pt-n" data-pt="notas" value="'+esc(S.notas)+'" placeholder="Ej.: llegó 10 min tarde"></div>';
+  h+='<div class="savebar"><div class="grow"><b>'+(cc&&nSel?nSel+' '+plural(nSel,'jugador','jugadores')+' · '+(cc.p>0?'+':'')+cc.p+' '+esc(cc.c):'Elige concepto y jugadores')+'</b>'+(S.msg?'<div class="toast '+S.msg.k+'">'+esc(S.msg.t)+'</div>':'')+'</div><button class="btn primary lg" data-ptc="save"'+(cc&&nSel&&!S.saving?'':' disabled')+'>'+(S.saving?'Guardando…':'Guardar puntos')+'</button></div></section>';
+  var per=S.per, R=ptRanking(S.team,per==='sem'?7:per==='mes'?30:0);
+  h+='<section class="block" style="margin-top:28px"><div class="sect"><h2>Ranking · '+esc(teamName(S.team))+'</h2><div class="seg">'+[['sem','7 días'],['mes','30 días'],['temp','Temporada']].map(function(x){return '<button data-ptc="per" data-v="'+x[0]+'" aria-pressed="'+(per===x[0])+'">'+x[1]+'</button>';}).join('')+'</div></div>'+
+    '<div class="scroll"><table><thead><tr><th>#</th><th class="t">Jugador</th><th>Total</th><th>Cuerpo técnico</th><th>De ellos negativos</th><th>Automáticos</th></tr></thead><tbody>'+
+    R.map(function(o,i){return '<tr><td>'+(i<3?['🥇','🥈','🥉'][i]:i+1)+'</td><td class="t">'+esc(title(o.j))+'</td><td><b>'+fi(o.tot)+'</b></td><td>'+fi(o.man)+'</td><td>'+(o.neg?'<span class="cell r">'+fi(o.neg)+'</span>':'–')+'</td><td class="mut">'+fi(o.auto)+'</td></tr>';}).join('')+'</tbody></table></div></section>';
+  var last=st.pts.filter(function(r){return r.team===S.team;}).slice(-15).reverse();
+  h+='<section class="block"><div class="sect"><h2>Últimos registros</h2><span>para corregir, edita la pestaña PUNTOS</span></div>'+(last.length?'<div class="scroll"><table><tbody>'+last.map(function(r){return '<tr><td>'+fs(r.t)+'</td><td class="t">'+esc(title(r.j))+'</td><td class="t">'+esc(r.con)+(r.n?' <span class="mut">· '+esc(r.n)+'</span>':'')+'</td><td><span class="cell '+(r.p<0?'r':'v')+'">'+(r.p>0?'+':'')+fi(r.p)+'</span></td><td class="mut">'+esc(r.by)+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Aún no hay puntos registrados.</p>')+'</section>';
+  if(role==='admin'&&st.acc.length){
+    var J=st.acc.filter(function(a){return a.tipo==='jugador'&&a.team===S.team;}), sc=st.acc.filter(function(a){return a.tipo.indexOf('cuerpo')===0;})[0];
+    h+='<details class="glos"><summary>Accesos a la app · PIN de cada jugador (solo tú lo ves)</summary><p class="mut note">Enlace: <b>https://matquiper.github.io/mateoqp/</b> · Código del cuerpo técnico: <b>'+esc(sc?sc.pin:'–')+'</b>. Para cambiar un PIN o desactivar a alguien, edita la pestaña ACCESOS.</p>'+
+      '<div class="actions"><button class="btn" data-ptc="copypins">Copiar mensajes para enviar ('+J.length+')</button></div><div class="scroll"><table><tbody>'+J.map(function(a){return '<tr><td class="t">'+esc(title(a.n))+'</td><td><b>'+esc(a.pin)+'</b></td><td class="mut">'+(a.act?'Activo':'Desactivado')+'</td></tr>';}).join('')+'</tbody></table></div></details>';
+  }
+  st._ptWho=who; return h;
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('[data-ptc]');if(!b||st.view!=='puntos')return;e.stopImmediatePropagation();
+  var a=b.getAttribute('data-ptc'),v=b.getAttribute('data-v'),S=st.pt,y=window.scrollY,re=function(){render(true);window.scrollTo(0,y);};
+  if(a==='team'){S.team=v;S.sel={};}
+  else if(a==='conc'){S.conc=S.conc===v?'':v;}
+  else if(a==='p'){S.sel[v]=!S.sel[v];}
+  else if(a==='all'){fullRoster(S.team).forEach(function(p){S.sel[p]=true;});}
+  else if(a==='none'){S.sel={};}
+  else if(a==='per'){S.per=v;}
+  else if(a==='copypins'){
+    var J=st.acc.filter(function(x){return x.tipo==='jugador'&&x.team===S.team&&x.act;});
+    var txt=J.map(function(x){return 'Hola '+title(x.n.split(' ')[0])+', ya puedes usar la app de preparación física: https://matquiper.github.io/mateoqp/ · Entra como «Jugador» con tu nombre y apellido y tu PIN: '+x.pin+'. Añádela a la pantalla de inicio.';}).join('\n\n');
+    (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){S.msg={k:'ok',t:'Mensajes copiados: pégalos en WhatsApp (uno por jugador).'};re();},function(){S.msg={k:'err',t:'No se pudo copiar.'};re();});return;
+  }
+  else if(a==='save'){
+    var cc=st.ptc.filter(function(c){return c.c===S.conc;})[0], ps=fullRoster(S.team).filter(function(p){return S.sel[p];});if(!cc||!ps.length)return;
+    var t=cdate(S.fecha), d=new Date(), stamp=fd(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()))+' '+p2(d.getHours())+':'+p2(d.getMinutes());
+    var rows=ps.map(function(p){return [fd(t),S.team,p,cc.c,cc.p,S.notas||'',st._ptWho||'',stamp];});
+    S.saving=true;S.msg=null;re();
+    appendTo('PUNTOS!A1',rows).then(function(){rows.forEach(function(r,i){st.pts.push({t:t,team:S.team,j:ps[i],con:cc.c,p:cc.p,n:S.notas||'',by:st._ptWho||''});});S.msg={k:'ok',t:ps.length+' '+plural(ps.length,'jugador','jugadores')+' · '+(cc.p>0?'+':'')+cc.p+' '+cc.c+'.'};S.sel={};S.notas='';},function(er){S.msg={k:'err',t:(er&&er.message)||saveError(er,'PUNTOS')};})
+    .then(function(){S.saving=false;re();});return;
+  }
+  S.msg=null;re();
+},true);
+document.addEventListener('input',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-pt');if(!k)return;st.pt[k]=e.target.value;if(k==='fecha'){var y=window.scrollY;render(true);window.scrollTo(0,y);}},true);
+
+/* --- cuerpo técnico: distintivo en la barra superior --- */
+function staffBadge(){
+  if(!window.QPDB||QPDB.role()!=='staff')return;
+  document.body.classList.add('staff-mode');var top=document.querySelector('.top');if(!top||document.getElementById('stf-b'))return;
+  var b=document.createElement('span');b.id='stf-b';b.className='chipT';b.style.cssText='background:#C8102E;color:#fff;font-weight:600';b.textContent='Cuerpo técnico · '+title(String(QPDB.profile().nombre||'').split(' ')[0]);
+  top.insertBefore(b,top.querySelector('.stamp'));
+}
+
+/* ===== Mateo QP · vista del JUGADOR: solo sus datos. Hoy (wellness + RPE) · Mis datos · Puntos ===== */
+var PL={tab:'hoy',wf:{},rpe:null,min:null,day:0,msg:null,busy:false};
+function plOn(){return window.QPDB&&QPDB.role()==='jugador';}
+function plT(name){var t=QPDB.tabs()||{};return t[name]||[];}
+function plCol(v,k){var h=(v[0]||[]).map(norm);for(var i=0;i<h.length;i++){if(h[i].indexOf(k)===0)return i;}return -1;}
+function plRows(name){var v=plT(name);if(!v.length)return [];var h=(v[0]||[]).map(norm);return v.slice(1).map(function(r){var o={};h.forEach(function(k,i){o[k]=r[i]==null?'':r[i];});return o;});}
+function plG(o,k){for(var key in o){if(key.indexOf(k)===0)return o[key];}return '';}
+function plDay(off){var d=new Date();d.setDate(d.getDate()-off);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());}
+function plFlag(k,v){try{if(v===undefined)return localStorage.getItem('mqp-pl-'+k);localStorage.setItem('mqp-pl-'+k,v);}catch(e){return null;}}
+function plMe(){var y=plT('YO')[1]||[];var p=QPDB.profile();return {n:y[0]||p.nombre,team:y[1]||p.equipo};}
+function plSession(t){
+  var plan=plRows('PLAN').filter(function(r){return cdate(plG(r,'fecha'))===t;});
+  var mins=0,seen={};plan.forEach(function(r){var b=norm(plG(r,'bloque'))+'|'+plG(r,'orden');var m=num(plG(r,'duracion'));if(m!=null)mins+=m;seen[b]=1;});
+  var match=plRows('PARTIDOS').filter(function(r){return cdate(plG(r,'fecha'))===t;})[0]||null;
+  var blocks=uniq(plan.map(function(r){return plG(r,'bloque');}).filter(Boolean));
+  return {plan:plan,mins:Math.round(mins),blocks:blocks,match:match};
+}
+function plWfDone(t){return plFlag('wf-'+t)||plRows('DATOS').some(function(r){return cdate(plG(r,'fecha'))===t;});}
+function plRpeDone(t){return plFlag('rpe-'+t)||plRows('CARGA').some(function(r){var b=norm(plG(r,'bloque'));return cdate(plG(r,'fecha'))===t&&String(plG(r,'rpe')).trim()!==''&&(b==='sesion completa'||b.indexOf('partido')===0);});}
+
+var PL_CSS='body.pl-mode{display:block;background:#F3F3F5;color:#0B0B0C}body.pl-mode .side,body.pl-mode .top,body.pl-mode .sheet{display:none!important}'+
+ '#pl{max-width:640px;margin:0 auto;padding:0 0 calc(92px + env(safe-area-inset-bottom))}'+
+ '.plh{background:radial-gradient(420px 220px at 100% 0,rgba(229,35,58,.55),transparent 70%),#0B0B0C;color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;border-radius:0 0 26px 26px;box-shadow:inset 0 -3px 0 #C8102E}'+
+ '.plh .k{font:600 12px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#C4C4CB;display:flex;justify-content:space-between;align-items:center}'+
+ '.plh h1{font:800 italic 30px/1.05 "Saira",sans-serif;margin:8px 0 2px}.plh p{margin:0;color:#D8D8DE;font-size:14px}.plh img{height:34px}'+
+ '.plh .out{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;min-height:36px;padding:0 10px;font-size:13px}'+
+ '.plc{background:#fff;border-radius:20px;margin:14px 14px 0;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 12px 28px -18px rgba(0,0,0,.35)}'+
+ '.plc h2{font:700 20px "Saira",sans-serif;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px}.plc .sub{color:#55555D;font-size:14px;margin:0 0 10px}'+
+ '.plq{margin:14px 0 0}.plq b{font:700 16px "Saira",sans-serif;display:flex;justify-content:space-between}.plq b span{font:400 12px "IBM Plex Sans",sans-serif;color:#62626A}'+
+ '.pls{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}.pls.r11{grid-template-columns:repeat(6,1fr)}'+
+ '.pls button{min-height:52px;border-radius:12px;border:1px solid #D4D4DA;background:#fff;font:700 20px "Saira",sans-serif;color:#0B0B0C}'+
+ '.pls button[aria-pressed="true"]{background:#C8102E;color:#fff;border-color:transparent}'+
+ '.plb{width:100%;min-height:58px;border:0;border-radius:16px;background:#C8102E;color:#fff;font:700 18px "Saira",sans-serif;margin-top:16px}.plb:disabled{opacity:.45}'+
+ '.plok{display:flex;gap:10px;align-items:center;background:#E8F5EC;color:#1F6B43;border-radius:14px;padding:12px 14px;font-weight:600}'+
+ '.plmsg{margin-top:10px;padding:10px 12px;border-radius:12px;background:#FBE3E6;color:#A9291F;font-size:14px}.plmsg.ok{background:#E8F5EC;color:#1F6B43}'+
+ '.plseg{display:flex;gap:6px;margin:6px 0 10px}.plseg button{flex:1;min-height:44px;border-radius:12px;border:1px solid #D4D4DA;background:#fff;font-weight:600}.plseg button[aria-pressed="true"]{background:#0B0B0C;color:#fff}'+
+ '.plchips{display:flex;flex-wrap:wrap;gap:6px}.plchips button{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #D4D4DA;background:#fff;font-weight:600}.plchips button[aria-pressed="true"]{background:#0B0B0C;color:#fff}'+
+ '.plbig{font:900 italic 64px/1 "Saira",sans-serif;color:#C8102E}.plrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EEE;gap:10px}.plrow:last-child{border-bottom:0}'+
+ '.plrow.me{background:#FBE3E6;margin:0 -10px;padding:10px;border-radius:12px;border:0}.plpos{font:800 italic 20px "Saira",sans-serif;width:34px;color:#62626A}.plpts{font:800 20px "Saira",sans-serif}.plpts.n{color:#A9291F}.plpts.p{color:#1F6B43}'+
+ '.plbar{height:12px;border-radius:6px;background:#EEE;overflow:hidden;flex:1}.plbar i{display:block;height:100%;background:#C8102E;border-radius:6px}'+
+ '.plpill{display:inline-block;padding:2px 10px;border-radius:11px;font-size:12px;font-weight:700}.plpill.v{background:#DCEFE3;color:#1F6B43}.plpill.a{background:#FBEBC9;color:#7A4A00}.plpill.r{background:#FBE2DE;color:#A9291F}'+
+ '.plnav{position:fixed;left:0;right:0;bottom:0;background:#0B0B0C;display:flex;padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:6px;z-index:20}'+
+ '.plnav button{flex:1;min-height:54px;border:0;border-radius:14px;background:none;color:#C4C4CB;font:700 15px "Saira",sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}'+
+ '.plnav button[aria-pressed="true"]{background:#C8102E;color:#fff}.plnav span{font-size:20px;line-height:1}';
+function plBoot(){
+  if(!plOn())return;
+  var s=document.createElement('style');s.textContent=PL_CSS;document.head.appendChild(s);
+  document.body.classList.add('pl-mode');
+  var root=document.createElement('div');root.id='pl';document.body.appendChild(root);
+  root.addEventListener('click',plClick);plRender();
+}
+function plHead(){
+  var me=plMe(),key=TEAM_KEY[me.team],d=new Date(),h=d.getHours(),hi=h<14?'Buenos días':h<21?'Buenas tardes':'Buenas noches';
+  return '<header class="plh"><div class="k"><span>Mateo QP · '+esc(teamName(me.team))+'</span>'+(key?'<img src="'+CREST[key]+'" alt="">':'')+'</div><h1>'+hi+', '+esc(title(String(me.n).split(' ')[0]))+'</h1><p>'+esc(QPDB.statusText().t)+'</p></header>';
+}
+var PL_Q=[['f','Fatiga','1 muy fresco · 7 muy cansado'],['s','Sueño','1 dormí genial · 7 fatal'],['e','Estrés','1 nada · 7 mucho'],['d','Dolor muscular','1 nada · 7 mucho']];
+var PL_BORG={0:'Reposo',1:'Muy, muy suave',2:'Suave',3:'Moderado',4:'Algo duro',5:'Duro',6:'Duro',7:'Muy duro',8:'Muy duro',9:'Muy, muy duro',10:'Máximo'};
+function plHoy(){
+  var t0=plDay(0),h='';
+  /* wellness */
+  if(plWfDone(t0))h+='<section class="plc"><h2>Wellness de hoy</h2><div class="plok">✓ Ya lo has respondido. ¡Gracias!</div></section>';
+  else{
+    h+='<section class="plc"><h2>¿Cómo estás hoy?</h2><p class="sub">Tarda 10 segundos. 1 es lo mejor, 7 lo peor.</p>';
+    PL_Q.forEach(function(q){h+='<div class="plq"><b>'+q[1]+'<span>'+q[2]+'</span></b><div class="pls">';for(var k=1;k<=7;k++)h+='<button data-pl="wf" data-v="'+q[0]+'.'+k+'" aria-pressed="'+(PL.wf[q[0]]===k)+'">'+k+'</button>';h+='</div></div>';});
+    var ok=PL_Q.every(function(q){return PL.wf[q[0]]!=null;});
+    h+='<button class="plb" data-pl="wfsave"'+(ok&&!PL.busy?'':' disabled')+'>Enviar</button></section>';
+  }
+  /* RPE */
+  var t=plDay(PL.day),S=plSession(t),done=plRpeDone(t),m=S.match;
+  h+='<section class="plc"><h2>RPE '+(m?'del partido':'del entrenamiento')+'</h2><div class="plseg"><button data-pl="day" data-v="0" aria-pressed="'+(PL.day===0)+'">Hoy</button><button data-pl="day" data-v="1" aria-pressed="'+(PL.day===1)+'">Ayer</button></div>';
+  if(m)h+='<p class="sub">Partido vs <b>'+esc(plG(m,'rival')||'rival')+'</b>'+(plG(m,'competicion')?' · '+esc(plG(m,'competicion')):'')+'</p>';
+  else if(S.plan.length)h+='<p class="sub">'+esc(S.blocks.slice(0,4).join(' · '))+(S.blocks.length>4?'…':'')+' · '+S.mins+' min</p>';
+  else h+='<p class="sub">No hay sesión planificada ese día. Si entrenaste, puedes darlo igual.</p>';
+  if(done)h+='<div class="plok">✓ RPE enviado. ¡Gracias!</div>';
+  else{
+    h+='<div class="plq"><b>¿Cómo de duro ha sido?<span>'+(PL.rpe!=null?PL.rpe+' · '+PL_BORG[PL.rpe]:'0 reposo · 10 máximo')+'</span></b><div class="pls r11">';for(var k=0;k<=10;k++)h+='<button data-pl="rpe" data-v="'+k+'" aria-pressed="'+(PL.rpe===k)+'">'+k+'</button>';h+='</div></div>';
+    var needMin=!!m||!S.plan.length;
+    if(needMin){var opts=m?[90,80,70,60,45,30,15]:[90,75,60,45];h+='<div class="plq"><b>'+(m?'Minutos jugados':'Minutos de entrenamiento')+'</b><div class="plchips">'+opts.map(function(x){return '<button data-pl="min" data-v="'+x+'" aria-pressed="'+(PL.min===x)+'">'+x+'\'</button>';}).join('')+'</div></div>';}
+    h+='<button class="plb" data-pl="rpesave"'+(PL.rpe!=null&&(!needMin||PL.min)&&!PL.busy?'':' disabled')+'>Enviar RPE</button>';
+  }
+  h+=(PL.msg?'<div class="plmsg '+(PL.msg.k||'')+'">'+esc(PL.msg.t)+'</div>':'')+'</section>';
+  return h;
+}
+function plDatos(){
+  var h='',W=plRows('DATOS').map(function(r){return {t:cdate(plG(r,'fecha')),i:num(plG(r,'indice')),s:plG(r,'semaforo')};}).filter(function(x){return x.t!=null;}).sort(function(a,b){return b.t-a.t;}).slice(0,10);
+  h+='<section class="plc"><h2>Mi wellness</h2><p class="sub">Índice de 4 (mejor) a 28. Últimas respuestas.</p>'+(W.length?W.map(function(x){var c=norm(x.s)==='rojo'?'r':norm(x.s)==='ambar'?'a':'v';return '<div class="plrow"><span>'+esc(wd(x.t)+' '+fs(x.t))+'</span><div class="plbar"><i style="width:'+Math.min(100,((x.i||4)-4)/24*100+4)+'%"></i></div><b>'+(x.i==null?'–':f1(x.i))+'</b><span class="plpill '+c+'">'+esc(x.s||'')+'</span></div>';}).join(''):'<p class="sub">Aún no hay respuestas.</p>')+'</section>';
+  var wk={};plRows('CARGA').forEach(function(r){var t=cdate(plG(r,'fecha')),rp=num(plG(r,'rpe')),mn=num(plG(r,'duracion'));if(t==null||rp==null||mn==null||norm(plG(r,'jugador')).indexOf('todo')===0)return;var w=weekStart(t,0);wk[w]=(wk[w]||0)+rp*mn;});
+  var ws=Object.keys(wk).map(Number).sort(function(a,b){return b-a;}).slice(0,6),mx=Math.max.apply(null,ws.map(function(w){return wk[w];}).concat([1]));
+  h+='<section class="plc"><h2>Mi carga semanal</h2><p class="sub">RPE × minutos (UA) de cada semana.</p>'+(ws.length?ws.map(function(w){return '<div class="plrow"><span>'+fs(w)+'</span><div class="plbar"><i style="width:'+(wk[w]/mx*100)+'%"></i></div><b>'+fi(wk[w])+'</b></div>';}).join(''):'<p class="sub">Aún no hay carga registrada.</p>')+'</section>';
+  var E=plRows('EVALUACIONES').filter(function(r){return norm(plG(r,'variable'))==='vift';}).sort(function(a,b){return cdate(plG(b,'fecha'))-cdate(plG(a,'fecha'));});
+  var D=plRows('DISPONIBILIDAD'),last=D[D.length-1];
+  h+='<section class="plc"><h2>Mi estado</h2>'+(E.length?'<div class="plrow"><span>VIFT (30-15 IFT)</span><b>'+esc(plG(E[0],'valor'))+' km/h</b></div>':'')+'<div class="plrow"><span>Disponibilidad</span><b>'+esc(last?plG(last,'estado'):'Disponible')+'</b></div></section>';
+  return h;
+}
+function plPuntos(){
+  var me=plMe(),R=plT('RANKING').slice(1),myN=norm(me.n),pos=0,mine=null;
+  R.forEach(function(r,i){if(norm(r[0])===myN){pos=i+1;mine=r;}});
+  var h='<section class="plc" style="text-align:center"><h2 style="justify-content:center">Mis puntos</h2><div class="plbig">'+(mine?fi(num(mine[1])):'0')+'</div><p class="sub">'+(mine?(num(mine[2])>=0?'+':'')+fi(num(mine[2]))+' esta semana · ':'')+(pos?pos+'º de '+R.length:'')+'</p></section>';
+  h+='<section class="plc"><h2>Ranking '+esc(teamName(me.team))+'</h2>'+R.map(function(r,i){var isMe=norm(r[0])===myN,w=String(r[0]).split(' '),nm=isMe?title(r[0]):title(w[0])+(w[1]?' '+w[1].charAt(0)+'.':'');return '<div class="plrow'+(isMe?' me':'')+'"><span class="plpos">'+(i<3?['🥇','🥈','🥉'][i]:(i+1))+'</span><span style="flex:1">'+esc(nm)+'</span><span class="plpts">'+fi(num(r[1]))+'</span></div>';}).join('')+'</section>';
+  var P=plRows('PUNTOS').map(function(r){return {t:cdate(plG(r,'fecha')),c:plG(r,'concepto'),p:num(plG(r,'puntos'))};}).filter(function(x){return x.t!=null;}).sort(function(a,b){return b.t-a.t;}).slice(0,30);
+  h+='<section class="plc"><h2>Mi historial</h2><p class="sub">También suman solos: +1 por cada wellness y cada RPE que envías.</p>'+(P.length?P.map(function(x){return '<div class="plrow"><span>'+esc(fs(x.t))+'</span><span style="flex:1">'+esc(x.c)+'</span><span class="plpts '+(x.p<0?'n':'p')+'">'+(x.p>0?'+':'')+fi(x.p)+'</span></div>';}).join(''):'<p class="sub">Todavía no tienes puntos del cuerpo técnico.</p>')+'</section>';
+  return h;
+}
+function plRender(){
+  var root=document.getElementById('pl');if(!root)return;
+  var body=PL.tab==='datos'?plDatos():PL.tab==='puntos'?plPuntos():plHoy();
+  root.innerHTML=plHead()+body+'<p style="text-align:center;color:#62626A;font-size:12px;margin:18px">Solo tú ves tus datos.</p>'+
+    '<nav class="plnav"><button data-pl="tab" data-v="hoy" aria-pressed="'+(PL.tab==='hoy')+'"><span>✓</span>Hoy</button><button data-pl="tab" data-v="datos" aria-pressed="'+(PL.tab==='datos')+'"><span>📈</span>Mis datos</button><button data-pl="tab" data-v="puntos" aria-pressed="'+(PL.tab==='puntos')+'"><span>🏆</span>Puntos</button><button data-pl="me"><span>👤</span>Yo</button></nav>';
+}
+function plClick(e){
+  var b=e.target.closest('[data-pl]');if(!b)return;var a=b.getAttribute('data-pl'),v=b.getAttribute('data-v');
+  if(a==='tab'){PL.tab=v;PL.msg=null;plRender();window.scrollTo(0,0);return;}
+  if(a==='me'){QPDB.openSettings();return;}
+  if(a==='wf'){var q=v.split('.');PL.wf[q[0]]=+q[1];plRender();return;}
+  if(a==='day'){PL.day=+v;PL.rpe=null;PL.min=null;PL.msg=null;plRender();return;}
+  if(a==='rpe'){PL.rpe=+v;plRender();return;}
+  if(a==='min'){PL.min=+v;plRender();return;}
+  var me=plMe();
+  if(a==='wfsave'){
+    var t=plDay(0),d=new Date(),row=[fd(t)+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()),me.n,PL.wf.f,PL.wf.s,PL.wf.e,PL.wf.d,'','',me.team,'APP JUGADOR'];
+    PL.busy=true;plRender();
+    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:"'Respuestas de formulario 1'!A1",values:[row]}).then(function(){plFlag('wf-'+t,'1');PL.wf={};PL.msg={k:'ok',t:'Wellness enviado. +1 punto 💪'};},function(er){PL.msg={t:(er&&er.message)||'No se pudo guardar'};}).then(function(){PL.busy=false;plRender();});
+    return;
+  }
+  if(a==='rpesave'){
+    var t2=plDay(PL.day),S=plSession(t2),m=S.match,o;
+    if(m){var rv=plG(m,'rival'),cp=plG(m,'competicion');o={fecha:fd(t2),team:me.team,j:me.n,tipo:'Partido',ex:'Partido'+(cp?' · '+cp:''),min:PL.min,rpe:PL.rpe,n:rv?'vs '+rv:'',bloque:'Partido'+(rv?' vs '+rv:''),parte:'Partido'};}
+    else o={fecha:fd(t2),team:me.team,j:me.n,tipo:'Otro',ex:'RPE final',min:S.plan.length?S.mins:PL.min,rpe:PL.rpe,bloque:'Sesión completa'};
+    PL.busy=true;plRender();
+    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:'CARGA!A1',values:[sheetRow(o)]}).then(function(){plFlag('rpe-'+t2,'1');PL.rpe=null;PL.min=null;PL.msg={k:'ok',t:'RPE enviado. +1 punto 💪'};},function(er){PL.msg={t:(er&&er.message)||'No se pudo guardar'};}).then(function(){PL.busy=false;plRender();});
+  }
+}
+
 var ready=window.QPDB.ready();
-QPDB.onChange=function(){ var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){ if(!st._qpDirty){st._qpDirty=true; a.addEventListener('blur',function f(){a.removeEventListener('blur',f); setTimeout(function(){if(st._qpDirty){st._qpDirty=false; load(false);}},50);});} return; } var y=window.scrollY; load(false).then(function(){window.scrollTo(0,y);}); };
+ready.then(function(){plBoot();staffBadge();});
+QPDB.onChange=function(){ if(plOn()){plRender();return;} var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){ if(!st._qpDirty){st._qpDirty=true; a.addEventListener('blur',function f(){a.removeEventListener('blur',f); setTimeout(function(){if(st._qpDirty){st._qpDirty=false; load(false);}},50);});} return; } var y=window.scrollY; load(false).then(function(){window.scrollTo(0,y);}); };
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-act="preload"],#refresh'); if(!b)return; e.preventDefault(); e.stopImmediatePropagation(); setStatus('load'); QPDB.sync().then(function(){return load(false);});},true);
 document.addEventListener('click',function(e){if(st._qpDirty&&e.target.closest&&e.target.closest('[data-act="view"],[data-act="ctab"],[data-act="tab"]')){st._qpDirty=false;setTimeout(function(){load(false);},0);}},false);
 function mpChips(i,mn,dur){var vs=[dur,75,60,45,30,20,10].filter(function(v,k,a){return v<=dur&&a.indexOf(v)===k;});return vs.map(function(v){return '<button type="button" class="chip" data-act="mpmin" data-v="'+i+'.'+v+'" aria-pressed="'+(mn===v)+'">'+fi(v)+'\'</button>';}).join('');}
