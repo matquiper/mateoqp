@@ -192,14 +192,15 @@
       '<button class="lnk" data-l="admin">Administración</button><div class="msg" id="qplm">'+msg+'</div></div>';}
     function form(t){ov.innerHTML='<div class="box"><h1>'+(t==='jugador'?'Jugador':'Cuerpo técnico')+'</h1><div class="qptag">Entrar</div>'+
       '<label for="ql-n">Nombre y apellido</label><input id="ql-n" autocomplete="name" autocapitalize="words" placeholder="Ej.: Hugo Dorta">'+
-      '<label for="ql-p">'+(t==='jugador'?'PIN (4 cifras, te lo da Mateo)':'Código del cuerpo técnico')+'</label><input id="ql-p" class="pin" '+'inputmode="numeric" pattern="[0-9]*" maxlength="'+(t==='jugador'?4:8)+'"'+' autocomplete="off">'+
+      '<label for="ql-p">'+(t==='jugador'?'Tu código: J (juvenil) o R (regional) + tu dorsal. Ej.: R09':'Código del cuerpo técnico (números)')+'</label><input id="ql-p" class="pin" '+(t==='jugador'?'autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="4" placeholder="R09"':'inputmode="numeric" pattern="[0-9]*" maxlength="8"')+' autocomplete="off">'+
       '<button class="big r go" data-l="go" data-t="'+t+'">Entrar</button><button class="lnk" data-l="back">Volver</button><div class="msg" id="qplm"></div></div>';
       setTimeout(function(){var n=ov.querySelector('#ql-n');if(n)n.focus();},50);}
     home(); document.body.appendChild(ov);
     ov.addEventListener('click',function(e){var b=e.target.closest('[data-l]');if(!b)return;var a=b.getAttribute('data-l');
       if(a==='jugador'||a==='staff')form(a); else if(a==='back')home(); else if(a==='admin'){ov.remove();openSettings();}
       else if(a==='go'){var n=ov.querySelector('#ql-n').value.trim(),p=ov.querySelector('#ql-p').value.trim(),m=ov.querySelector('#qplm');
-        if(!n||!p){m.textContent='Rellena nombre y '+(b.getAttribute('data-t')==='jugador'?'PIN':'código')+'.';return;}
+        p=p.toUpperCase().replace(/\s+/g,'');var mm=p.match(/^([JR])(\d)$/);if(mm)p=mm[1]+'0'+mm[2];   /* R9 = R09 */
+        if(!n||!p){m.textContent='Rellena nombre y código.';return;}
         b.disabled=true;b.textContent='Entrando…';m.textContent='';
         login(b.getAttribute('data-t'),n,p).then(function(){location.reload();},function(er){b.disabled=false;b.textContent='Entrar';m.textContent=er.message||'No se pudo entrar';});}
     });
@@ -5584,7 +5585,7 @@ function ptsView(){
   h+='<section class="block"><div class="sect"><h2>Últimos registros</h2><span>para corregir, edita la pestaña PUNTOS</span></div>'+(last.length?'<div class="scroll"><table><tbody>'+last.map(function(r){return '<tr><td>'+fs(r.t)+'</td><td class="t">'+esc(title(r.j))+'</td><td class="t">'+esc(r.con)+(r.n?' <span class="mut">· '+esc(r.n)+'</span>':'')+'</td><td><span class="cell '+(r.p<0?'r':'v')+'">'+(r.p>0?'+':'')+fi(r.p)+'</span></td><td class="mut">'+esc(r.by)+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Aún no hay puntos registrados.</p>')+'</section>';
   if(role==='admin'&&st.acc.length){
     var J=st.acc.filter(function(a){return a.tipo==='jugador'&&a.team===S.team;}), sc=st.acc.filter(function(a){return a.tipo.indexOf('cuerpo')===0;})[0];
-    h+='<details class="glos"><summary>Accesos a la app · PIN de cada jugador (solo tú lo ves)</summary><p class="mut note">Enlace: <b>https://matquiper.github.io/mateoqp/</b> · Código del cuerpo técnico: <b>'+esc(sc?sc.pin:'–')+'</b>. Para cambiar un PIN o desactivar a alguien, edita la pestaña ACCESOS.</p>'+
+    h+='<details class="glos"><summary>Accesos a la app · código de cada jugador (solo tú lo ves)</summary><p class="mut note">Enlace: <b>https://matquiper.github.io/mateoqp/</b> · Código del cuerpo técnico: <b>'+esc(sc?sc.pin:'–')+'</b>. El código sale solo de la letra (J/R) y el dorsal: para cambiarlo, edita el dorsal en la pestaña ACCESOS (columna H). «No» en Activo le quita el acceso.</p>'+
       '<div class="actions"><button class="btn" data-ptc="copypins">Copiar mensajes para enviar ('+J.length+')</button></div><div class="scroll"><table><tbody>'+J.map(function(a){return '<tr><td class="t">'+esc(title(a.n))+'</td><td><b>'+esc(a.pin)+'</b></td><td class="mut">'+(a.act?'Activo':'Desactivado')+'</td></tr>';}).join('')+'</tbody></table></div></details>';
   }
   st._ptWho=who; return h;
@@ -5600,7 +5601,7 @@ document.addEventListener('click',function(e){
   else if(a==='per'){S.per=v;}
   else if(a==='copypins'){
     var J=st.acc.filter(function(x){return x.tipo==='jugador'&&x.team===S.team&&x.act;});
-    var txt=J.map(function(x){return 'Hola '+title(x.n.split(' ')[0])+', ya puedes usar la app de preparación física: https://matquiper.github.io/mateoqp/ · Entra como «Jugador» con tu nombre y apellido y tu PIN: '+x.pin+'. Añádela a la pantalla de inicio.';}).join('\n\n');
+    var txt=J.map(function(x){return 'Hola '+title(x.n.split(' ')[0])+', ya puedes usar la app de preparación física: https://matquiper.github.io/mateoqp/ · Entra como «Jugador» con tu nombre y apellido y tu código: '+x.pin+' (letra de tu equipo + dorsal). Añádela a la pantalla de inicio.';}).join('\n\n');
     (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){S.msg={k:'ok',t:'Mensajes copiados: pégalos en WhatsApp (uno por jugador).'};re();},function(){S.msg={k:'err',t:'No se pudo copiar.'};re();});return;
   }
   else if(a==='save'){
@@ -5673,7 +5674,7 @@ function plSubscribe(silent){
 function plPushCard(){
   var s=plPushState(),av=plAviso(),cu=av.modo==='md1'?'el día antes de cada partido':'los días de entreno y el día antes de cada partido';
   if(s==='activar')return '<section class="plc"><h2>🔔 Avisos del wellness</h2><p class="sub">Te aviso a las '+av.hora+':00 '+cu+' para que respondas.</p><button class="plb" data-pl="push" style="margin-top:4px">Activar avisos</button></section>';
-  if(s==='instalar')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y PIN, y toca «Activar avisos».</p></section>';
+  if(s==='instalar')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y código, y toca «Activar avisos».</p></section>';
   if(s==='denegado')return '<section class="plc"><p class="sub" style="margin:0">Avisos bloqueados. Para recibirlos: Ajustes del móvil → Notificaciones → Mateo QP.</p></section>';
   return '';
 }
