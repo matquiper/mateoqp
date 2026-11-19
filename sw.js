@@ -1,5 +1,5 @@
 /* Mateo QP · funciona sin conexión. La app se guarda en el iPad; los datos nunca pasan por esta caché. */
-var V = 'mqp-v4';
+var V = 'mqp-v5';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (x) { return x !== V; }).map(function (x) { return caches.delete(x); })); }).then(function () { return self.clients.claim(); })); });
@@ -14,4 +14,15 @@ self.addEventListener('fetch', function (e) {
   // la app: primero la red (para coger versiones nuevas), si no hay, la copia guardada
   e.respondWith(fetch(e.request).then(function (n) { var cp = n.clone(); caches.open(V).then(function (c) { c.put(e.request, cp); }); return n; })
     .catch(function () { return caches.match(e.request).then(function (r) { return r || caches.match('./index.html'); }); }));
+});
+/* aviso del wellness (llega sin contenido: no lleva nombres ni datos) */
+self.addEventListener('push', function (e) {
+  e.waitUntil(self.registration.showNotification('Mateo QP · Wellness', { body: 'Toca para responder el wellness de hoy. Tarda 10 segundos.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'wellness', renotify: true, data: { url: './' } }));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
+    for (var i = 0; i < cs.length; i++) { if ('focus' in cs[i]) return cs[i].focus(); }
+    return self.clients.openWindow('./');
+  }));
 });
