@@ -5818,7 +5818,10 @@ var IND_CSS='#ind{position:fixed;inset:0;z-index:60;background:#F3F3F5;overflow:
  '.indnav .a{background:rgba(255,255,255,.1);color:#fff}.indnav .b{background:#C8102E;color:#fff}.indnav .b:disabled{opacity:.45}'+
  '.indrest{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:62;background:#C8102E;color:#fff;border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font:800 22px "Saira",sans-serif;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}'+
  '.indrest button{background:#fff;color:#C8102E;border:0;border-radius:10px;min-height:40px;padding:0 14px;font-weight:700}'+
- '.indwarm li{margin:6px 0}.indcard{display:flex;gap:12px;align-items:center}.indcard .ic{font-size:30px}';
+ '.indwarm li{margin:6px 0}.indcard{display:flex;gap:12px;align-items:center}.indcard .ic{font-size:30px}'+
+ '.indpick{display:grid;gap:8px;margin-top:12px}.indpick button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:60px;padding:10px 14px;border-radius:14px;border:2px solid #0B0B0C;background:#fff;color:#0B0B0C}'+
+ '.indpick b{font:800 italic 18px "Saira",sans-serif}.indpick small{font-size:13px;color:#62626A}.indpick button.done{border-color:#1F8F4E;background:#EEF7F1}'+
+ '.indwarm a{color:#C8102E;font-weight:700;white-space:nowrap}';
 function indOrg(){return plRows('IND_ORG');}
 function indToday(){var t=plDay(0);return indOrg().filter(function(r){return cdate(plG(r,'fecha'))===t&&String(plG(r,'sesion individual')).trim()&&norm(plG(r,'sesion individual'))!=='descanso';})[0]||null;}
 function indNext(){var t=plDay(0),best=null;indOrg().forEach(function(r){var d=cdate(plG(r,'fecha')),s=String(plG(r,'sesion individual')).trim();if(d!=null&&d>t&&s&&norm(s)!=='descanso'&&(!best||d<best.d))best={d:d,s:s};});return best;}
@@ -5862,7 +5865,7 @@ function indRender(){
     PL_Q.forEach(function(q){h+='<div class="plq"><b>'+q[1]+'<span>'+q[2]+'</span></b><div class="pls">';for(var k=1;k<=7;k++)h+='<button data-i="wf" data-v="'+q[0]+'.'+k+'" aria-pressed="'+(IND.wf[q[0]]===k)+'">'+k+'</button>';h+='</div></div>';});
     h+='</section>';
   } else if(st0===1){
-    h+='<section class="plc"><h2>Calentamiento</h2>'+(IND.warm.length?'<ul class="indwarm">'+IND.warm.map(function(r){var x=plG(r,'indicaciones'),rp=plG(r,'reps');return '<li><b>'+esc(plG(r,'ejercicio'))+'</b>'+(rp?' · '+esc(rp):'')+(plG(r,'rpe')?' · RPE '+esc(plG(r,'rpe')):'')+(x?'<br><span class="sub">'+esc(x)+'</span>':'')+'</li>';}).join('')+'</ul>':'<p class="sub">Calentamiento general de 8-10 minutos.</p>')+
+    h+='<section class="plc"><h2>Calentamiento</h2>'+(IND.warm.length?'<ul class="indwarm">'+IND.warm.map(function(r){var x=plG(r,'indicaciones'),rp=plG(r,'reps'),vw=String(plG(r,'video')||'').trim();return '<li><b>'+esc(plG(r,'ejercicio'))+'</b>'+(rp?' · '+esc(rp):'')+(plG(r,'rpe')?' · RPE '+esc(plG(r,'rpe')):'')+(/^https?:\/\//.test(vw)?' · <a href="'+esc(vw)+'" target="_blank" rel="noopener">▶ vídeo</a>':'')+(x?'<br><span class="sub">'+esc(x)+'</span>':'')+'</li>';}).join('')+'</ul>':'<p class="sub">Calentamiento general de 8-10 minutos.</p>')+
       '<p class="sub" style="margin-top:12px">'+n+' ejercicios · toca ✓ al acabar cada serie y empieza el descanso.</p></section>';
   } else if(st0<2+n){
     var i=st0-2,r=IND.ex[i],D=IND.d[i],L=indLast(plG(r,'ejercicio')),vid=String(plG(r,'video')||'').trim();
@@ -5921,11 +5924,25 @@ function indClick(e){
       function(er){IND.busy=false;IND.msg={t:(er&&er.message)||'No se pudo guardar. Tus datos siguen aquí: inténtalo otra vez.'};indRender();});
   }
 }
+/* jugadores que van por libre (IND JUGADORES «Elige él la sesión» = Sí): eligen ellos qué sesión hacer cada día */
+function indFree(){return plRows('IND_JUG').some(function(r){return norm(plG(r,'elige')).indexOf('si')===0;});}
+function indLastDone(ses){var b=null;indReg().forEach(function(r){if(norm(plG(r,'sesion'))!==norm(ses))return;var d=cdate(plG(r,'fecha'));if(d!=null&&(b==null||d>b))b=d;});return b;}
+function indPick(){
+  var S=indSessions(),t=plDay(0),lun=t-((new Date(t).getUTCDay()+6)%7)*864e5,sem={};
+  indReg().forEach(function(r){var d=cdate(plG(r,'fecha'));if(d!=null&&d>=lun&&d<=t)sem[d+'|'+norm(plG(r,'sesion'))]=1;});
+  var nSem=Object.keys(sem).length,L=S.map(function(s){return indLastDone(s);}),old=-1,oi=-1;
+  S.forEach(function(s,i){var v=L[i]==null?-Infinity:L[i];if(oi<0||v<old){old=v;oi=i;}});
+  var h='<div class="indcard"><span class="ic">🏋️</span><div style="flex:1"><h2 style="margin:0">Tu entrenamiento individual</h2><p class="sub" style="margin:2px 0 0">Elige la sesión que vas a hacer hoy.'+(nSem?' Esta semana llevas <b>'+nSem+'</b>.':'')+'</p></div></div><div class="indpick">';
+  S.forEach(function(s,i){var done=indDoneToday(s),n=indProg(s).filter(function(x){return norm(plG(x,'registrar'))!=='no';}).length,draft=false;try{draft=!!localStorage.getItem('mqp-ind-'+t+'-'+norm(s));}catch(e){}
+    h+='<button data-pl="ind" data-v="'+esc(s)+'"'+(done?' class="done"':'')+'><b>'+esc(s)+'</b><small>'+n+' ejercicio'+(n===1?'':'s')+' · '+(done?'✓ hecha hoy':draft?'a medias: continuar':L[i]!=null?'última vez '+esc(fs(L[i])):'aún no la has hecho')+(i===oi&&!done&&S.length>1?' · <i>la que más tiempo llevas sin hacer</i>':'')+'</small></button>';});
+  return h+'</div>';
+}
 /* tarjeta en «Hoy» */
 function indCard(){
   if(!plRows('IND_PROG').length)return '';
   if(!document.getElementById('indcss')){var cs=document.createElement('style');cs.id='indcss';cs.textContent=IND_CSS;document.head.appendChild(cs);}
   var r=indToday(),h='<section class="plc">';
+  if(!r&&indFree())return h+indPick()+'</section>';
   if(r){var s=String(plG(r,'sesion individual')).trim(),done=indDoneToday(s),n=indProg(s).filter(function(x){return norm(plG(x,'registrar'))!=='no';}).length,draft=false;try{draft=!!localStorage.getItem('mqp-ind-'+plDay(0)+'-'+norm(s));}catch(e){}
     h+='<div class="indcard"><span class="ic">🏋️</span><div style="flex:1"><h2 style="margin:0">Tu entrenamiento individual</h2><p class="sub" style="margin:2px 0 0">'+esc(s)+' · '+n+' ejercicios'+(plG(r,'notas')?' · '+esc(plG(r,'notas')):'')+'</p></div></div>'+
       (done?'<div class="plok" style="margin-top:10px">✓ Hecho hoy. ¡Bien!</div>':'<button class="plb" data-pl="ind" data-v="'+esc(s)+'">'+(draft?'Continuar':'Empezar')+'</button>');
