@@ -1,6 +1,6 @@
 /* Mateo QP · funciona sin conexión. La app se guarda en el iPad; los datos nunca pasan por esta caché. */
-var V = 'mqp-v5';
-var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
+var V = 'mqp-v6';
+var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/maskable-512-v2.png', './icons/apple-touch-icon-v2.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (x) { return x !== V; }).map(function (x) { return caches.delete(x); })); }).then(function () { return self.clients.claim(); })); });
 self.addEventListener('fetch', function (e) {
@@ -17,7 +17,7 @@ self.addEventListener('fetch', function (e) {
 });
 /* aviso del wellness (llega sin contenido: no lleva nombres ni datos) */
 self.addEventListener('push', function (e) {
-  e.waitUntil(self.registration.showNotification('Mateo QP · Wellness', { body: 'Toca para responder el wellness de hoy. Tarda 10 segundos.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'wellness', renotify: true, data: { url: './' } }));
+  e.waitUntil(self.registration.showNotification('Mateo QP · Wellness', { body: 'Toca para responder el wellness de hoy. Tarda 10 segundos.', icon: './icons/icon-192-v2.png', badge: './icons/icon-192-v2.png', tag: 'wellness', renotify: true, data: { url: './' } }));
 });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();

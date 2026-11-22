@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Mateo QP</title><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mateo QP"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0B0B0C"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="icon" href="icons/icon-192.png">
+<title>Mateo QP</title><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mateo QP"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0B0B0C"><link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-v2.png"><link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192-v2.png">
 <script>
 /* ===== Mateo QP · base de datos en el iPad + sincronización con Google (Apps Script) =====
    La app lee siempre de aquí (al instante, sin conexión). Lo que guardas entra en una cola
@@ -191,7 +191,7 @@
       '<button class="big" data-l="staff">📋<span>Cuerpo técnico<small>Entrenadores, utillero…</small></span></button>'+
       '<button class="lnk" data-l="admin">Administración</button><div class="msg" id="qplm">'+msg+'</div></div>';}
     function form(t){ov.innerHTML='<div class="box"><h1>'+(t==='jugador'?'Jugador':'Cuerpo técnico')+'</h1><div class="qptag">Entrar</div>'+
-      '<label for="ql-n">Nombre y apellido</label><input id="ql-n" autocomplete="name" autocapitalize="words" placeholder="Ej.: Hugo Dorta">'+
+      '<label for="ql-n">Nombre y apellido</label><input id="ql-n" autocomplete="name" autocapitalize="words" placeholder="Ej.: Nombre Apellido">'+
       '<label for="ql-p">'+(t==='jugador'?'Tu código: J (juvenil) o R (regional) + tu dorsal. Ej.: R09':'Código del cuerpo técnico (números)')+'</label><input id="ql-p" class="pin" '+(t==='jugador'?'autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="4" placeholder="R09"':'inputmode="numeric" pattern="[0-9]*" maxlength="8"')+' autocomplete="off">'+
       '<button class="big r go" data-l="go" data-t="'+t+'">Entrar</button><button class="lnk" data-l="back">Volver</button><div class="msg" id="qplm"></div></div>';
       setTimeout(function(){var n=ov.querySelector('#ql-n');if(n)n.focus();},50);}
