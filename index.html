@@ -3746,7 +3746,7 @@ function paintShell(){
   document.getElementById('crests').innerHTML=key?'<img src="'+CREST[key]+'" alt="Escudo '+esc(teamName(st.team))+'">':'<img src="'+CREST.juvenil+'" alt="Escudo Esférico"><img src="'+CREST.regional+'" alt="Escudo Bahía de Santiago">';
   document.getElementById('brand-sub').textContent=key?teamName(st.team):'Juvenil y Regional';
   document.getElementById('logo-av').innerHTML=mqAvatar(); document.getElementById('mini').innerHTML=mqAvatar();
-  document.getElementById('nav-view').innerHTML='<small>Menú</small>'+[['carga','Carga de entrenamiento'],['partido','Carga de partido'],['bienestar','Bienestar'],['cal','Calendario'],['hoy','Plantilla'],['eval','Evaluaciones'],['puntos','Puntos']].map(function(x){return '<button data-act="view" data-v="'+x[0]+'" aria-pressed="'+(v===x[0])+'">'+ICON[x[0]]+'<span>'+x[1]+'</span></button>';}).join('');
+  document.getElementById('nav-view').innerHTML='<small>Menú</small>'+[['carga','Carga de entrenamiento'],['partido','Carga de partido'],['bienestar','Bienestar'],['cal','Calendario'],['hoy','Plantilla'],['eval','Evaluaciones'],['puntos','Puntos'],['indiv','Individuales']].map(function(x){return '<button data-act="view" data-v="'+x[0]+'" aria-pressed="'+(v===x[0])+'">'+ICON[x[0]]+'<span>'+x[1]+'</span></button>';}).join('');
   var items=[['TODOS','Todos los equipos',null],['JUVENIL ESFÉRICO','Juvenil · Esférico FC','juvenil'],['REGIONAL BAHÍA SANTIAGO','Regional · Bahía de Santiago','regional']];
   document.getElementById('nav-team').innerHTML='<small>Equipo</small>'+items.map(function(t){return '<button data-act="team" data-v="'+esc(t[0])+'" aria-pressed="'+(st.team===t[0])+'">'+(t[2]?'<img src="'+CREST[t[2]]+'" alt="">':'<svg class="ball" viewBox="-52 -52 104 104" aria-hidden="true">'+mqBall(0,0,50)+'</svg>')+'<span>'+t[1]+'</span></button>';}).join('');
   document.getElementById('legend2').innerHTML=v==='carga'?
@@ -3755,14 +3755,14 @@ function paintShell(){
     v==='partido'?'<div>sRPE del partido = RPE al acabar × minutos jugados (UA)</div><div>Se guarda en CARGA y cuenta en ACWR y alertas</div><div><i style="background:var(--red)"></i>Alerta roja: RPE 9–10 con 30 min o más</div><div><i style="background:var(--st-a)"></i>Ámbar: RPE 8 o +25 % sobre su media</div>':
     v==='eval'?'<div>Evaluar: pruebas cada cierto tiempo</div><div>Monitorizar: datos a diario (Carga)</div><div><i style="background:var(--red)"></i>Punto rojo: a más de 1 DE del grupo</div>':
     '<div>Escala de 1 (mejor) a 7 (peor)</div><div><i style="background:var(--st-r)"></i>Rojo: índice desde '+st.th.ir+' o 2 parámetros desde '+st.th.pr+'</div><div><i style="background:var(--st-a)"></i>Ámbar: índice desde '+st.th.ia+' o 1 parámetro desde '+st.th.pr+'</div><div><i style="background:var(--st-v)"></i>Verde: el resto</div>';
-  var sec=v==='puntos'?'Puntos':v==='partido'?'Carga de partido':v==='carga'?'Carga':v==='eval'?'Evaluaciones':v==='hoy'?'Plantilla':v==='cal'?'Calendario':'Bienestar', sub=v==='puntos'?'Adherencia':v==='partido'?'sRPE por jugador':v==='carga'?CSUB[st.ctab]:v==='eval'?ESUB[st.etab]:v==='hoy'?(st.htab==='disp'?'Disponibilidad':st.htab==='jugadores'?'Jugadores':'Hoy'):v==='cal'?(st.ktab==='partidos'?'Partidos':'Mes'):{dia:'Microciclo',jugador:'Jugador',evolucion:'Evolución',campo:'Cuestionario en campo'}[st.tab];
+  var sec=v==='indiv'?'Individuales':v==='puntos'?'Puntos':v==='partido'?'Carga de partido':v==='carga'?'Carga':v==='eval'?'Evaluaciones':v==='hoy'?'Plantilla':v==='cal'?'Calendario':'Bienestar', sub=v==='indiv'?'Seguimiento':v==='puntos'?'Adherencia':v==='partido'?'sRPE por jugador':v==='carga'?CSUB[st.ctab]:v==='eval'?ESUB[st.etab]:v==='hoy'?(st.htab==='disp'?'Disponibilidad':st.htab==='jugadores'?'Jugadores':'Hoy'):v==='cal'?(st.ktab==='partidos'?'Partidos':'Mes'):{dia:'Microciclo',jugador:'Jugador',evolucion:'Evolución',campo:'Cuestionario en campo'}[st.tab];
   if(typeof expSidebar==='function')document.getElementById('legend2').innerHTML+=expSidebar()+(st.expMsg?'<small class="expmsg" role="status">'+esc(st.expMsg)+'</small>':'');
   document.getElementById('crumb').innerHTML='<span class="cr-x"><b>'+esc(TEAM_FULL[st.team])+'</b> / </span>'+sec+' / <b>'+sub+'</b>';
   document.getElementById('side').className='side'+(st.menu?' open':'');
   document.querySelector('.menu').setAttribute('aria-expanded',!!st.menu);
 }
 function kickerText(){
-  if(st.view==='puntos')return 'Puntos · adherencia y actitud';if(st.view==='partido')return 'Partido · sRPE por jugador';
+  if(st.view==='indiv')return 'Programas individuales · seguimiento';if(st.view==='puntos')return 'Puntos · adherencia y actitud';if(st.view==='partido')return 'Partido · sRPE por jugador';
   if(st.view==='hoy')return st.htab==='disp'?'Plantilla · quién puede entrenar y jugar':st.htab==='jugadores'?'Plantilla · altas y posiciones':'Plantilla · alertas de hoy';
   if(st.view==='cal')return st.ktab==='partidos'?'Calendario · partidos de la temporada':'Calendario · partidos y carga del mes';
   if(st.view==='bienestar'&&st.tab==='campo')return 'Bienestar · cuestionario antes de la sesión';
@@ -3803,6 +3803,7 @@ function render(force,soft){
   } else if(v==='hoy'){html=st.htab==='disp'?cDisp():st.htab==='jugadores'?cJug():cHoy();} else if(v==='cal'){html=cCal();} else if(v==='eval'){
     html=st.etab==='jugador'?ePlayer():st.etab==='nueva'?eNueva():st.etab==='presc'?pxView():eRanking();
     html+='<p class="foot">'+st.evals.length+' '+plural(st.evals.length,'valor','valores')+' en la pestaña EVALUACIONES de tu hoja.</p>';
+  } else if(v==='indiv'){html=ipView();
   } else if(v==='puntos'){html=ptsView();
   } else if(st.tab==='campo'){html=cWF();
   } else {
@@ -3813,7 +3814,7 @@ function render(force,soft){
   /* con seis pestañas la barra se desplaza: la elegida queda a la vista sin mover la página */
   var tb=app.querySelector('.tabs'), ts=tb&&tb.querySelector('.tab[aria-selected="true"]');
   if(tb&&ts&&tb.scrollWidth>tb.clientWidth)tb.scrollLeft=Math.max(0,ts.getBoundingClientRect().left-tb.getBoundingClientRect().left+tb.scrollLeft-(tb.clientWidth-ts.offsetWidth)/2);
-  if(v==='bienestar'){if(st.tab!=='campo')draw();} else if(v!=='cal'&&v!=='partido'&&v!=='puntos')drawC();
+  if(v==='bienestar'){if(st.tab!=='campo')draw();} else if(v!=='cal'&&v!=='partido'&&v!=='puntos'&&v!=='indiv')drawC();
 }
 
 /* ---------- eventos ---------- */
@@ -4810,7 +4811,7 @@ function loadExtra(force){
     loadSheet(OB_TAB+'!A1:E1000',ingestObj,'ostat',force),
     loadSheet('GRUPOS!A1:E1000',ingestGroups,'gstat',force),
     loadSheet('BLOQUES!A1:N5000',ingestBlocks,'bstat',force),
-    loadSheet('ENTRENOS!A1:F200',ingestTrainings,'tstat',force),loadSheet('PUNTOS!A1:H20000',ingestPts,'ptsstat',force),loadSheet('PUNTOS_CONCEPTOS!A1:D100',ingestPtc,'ptcstat',force),loadSheet('ACCESOS!A1:F500',ingestAcc,'accstat',force)
+    loadSheet('ENTRENOS!A1:F200',ingestTrainings,'tstat',force),loadSheet('PUNTOS!A1:H20000',ingestPts,'ptsstat',force),loadSheet('PUNTOS_CONCEPTOS!A1:D100',ingestPtc,'ptcstat',force),loadSheet('ACCESOS!A1:F500',ingestAcc,'accstat',force),loadSheet('IND_JUG!A1:H300',ipIngJ,'ijst',force),loadSheet('IND_PROG!A1:M3000',ipIngP,'ipst',force),loadSheet('IND_REG!A1:K50000',ipIngR,'irst',force),loadSheet('IND_ORG!A1:J5000',ipIngO,'iost',force)
   ]);
 }
 
@@ -5975,6 +5976,189 @@ function indCard(){
   var S=indSessions();if(S.length)h+='<details style="margin-top:8px"><summary class="sub" style="cursor:pointer">Hacer otra sesión</summary><div class="plchips" style="margin-top:8px">'+S.map(function(x){return '<button data-pl="ind" data-v="'+esc(x)+'">'+esc(x)+'</button>';}).join('')+'</div></details>';
   return h+'</section>';
 }
+
+/* ===== Mateo QP · PANEL DE SEGUIMIENTO DE LOS PROGRAMAS INDIVIDUALES =====
+   Apoyado en los apuntes de EYC-EFD (ULL, módulos 2 y 4 y taller «Construye tu dashboard»):
+   - carga interna = sRPE (RPE × min), media móvil de 7 días, monotonía (media/SD semanal) y strain (carga semanal × monotonía);
+   - ACWR exponencial (EWMA, λ = 2/(N+1), aguda 7 d y crónica 28 d);
+   - z-score longitudinal individual del bienestar frente a sus últimos 28 días, alerta si Z ≤ −1,5;
+   - cambio relevante de fuerza con SESOI (5 % del e1RM) y relación carga interna:externa (menos RPE con la misma carga = adaptación);
+   - esquema de decisión de Gabbett (2017): carga de trabajo × percepción de bienestar. */
+st.ij=[];st.ip=[];st.ireg=[];st.iorg=[];st.ipv={sel:'',per:28};
+var IP_SESOI=5;   /* % de cambio del e1RM que consideramos relevante */
+if(typeof ICON==='object')ICON.indiv='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7v10M3 9.5v5M18 7v10M21 9.5v5M6 12h12"/></svg>';
+
+/* ---------- lectura de las pestañas IND_* ---------- */
+function ipIngJ(payload){var v=parseValues(payload),out=[];if(v.length<2){st.ij=out;return;}var c=colFinder(v),C={j:c('jugador'),team:c('equipo'),prog:c('programa'),ps:c('sesiones'),act:c('activo'),n:c('notas'),gr:c('entrena'),lib:c('elige')};
+  v.slice(1).forEach(function(r){var j=String(r[C.j]||'').trim();if(!j)return;out.push({j:j,team:String(r[C.team]||'').trim(),prog:String(r[C.prog]||'').trim(),ps:num(r[C.ps]),act:norm(r[C.act])!=='no',n:String(C.n>=0?r[C.n]||'':''),gr:String(C.gr>=0?r[C.gr]||'':''),lib:C.lib>=0&&/^s/i.test(norm(r[C.lib]))});});st.ij=out;}
+function ipIngP(payload){var v=parseValues(payload),out=[];if(v.length<2){st.ip=out;return;}var c=colFinder(v),C={s:c('sesion'),o:c('orden'),b:c('bloque'),x:c('ejercicio'),se:c('series'),re:c('reps'),rpe:c('rpe'),rir:c('rir'),reg:c('registrar')};
+  v.slice(1).forEach(function(r){var s=String(r[C.s]||'').trim();if(!s)return;out.push({s:s,o:num(r[C.o]),b:String(r[C.b]||''),x:String(r[C.x]||'').trim(),se:num(r[C.se]),re:String(r[C.re]||''),rpe:String(r[C.rpe]||''),rir:String(r[C.rir]||''),reg:norm(r[C.reg])!=='no'});});st.ip=out;}
+function ipIngR(payload){var v=parseValues(payload),out=[];if(v.length<2){st.ireg=out;return;}var c=colFinder(v),C={t:c('fecha'),j:c('jugador'),s:c('sesion'),x:c('ejercicio'),n:c('serie'),re:c('reps'),kg:c('kg'),rpe:c('rpe'),rir:c('rir')};
+  v.slice(1).forEach(function(r){var t=cdate(r[C.t]),j=String(r[C.j]||'').trim();if(t==null||!j)return;out.push({t:t,j:j,s:String(r[C.s]||'').trim(),x:String(r[C.x]||'').trim(),n:num(r[C.n]),re:num(r[C.re]),kg:num(r[C.kg]),rpe:num(r[C.rpe]),rir:num(r[C.rir])});});st.ireg=out;}
+function ipIngO(payload){var v=parseValues(payload),out=[];if(v.length<2){st.iorg=out;return;}var c=colFinder(v),C={j:c('jugador'),t:c('fecha'),s:c('sesion individual'),h:c('hecho')};
+  v.slice(1).forEach(function(r){var t=cdate(r[C.t]),j=String(r[C.j]||'').trim();if(t==null||!j)return;out.push({j:j,t:t,s:String(r[C.s]||'').trim(),h:String(r[C.h]||'')});});st.iorg=out;}
+
+/* ---------- cálculos ---------- */
+function ipSame(a,b){return norm(a)===norm(b);}
+/* carga diaria de cada jugador con todo lo que hace (equipo, partidos e individual), igual que la Monitorización */
+function ipLoads(){
+  var key=st.carga.length+'|'+st.rows.length+'|'+(st.av||[]).length;if(st._ipL&&st._ipL.k===key)return st._ipL.M;
+  var keep=st.team,A=[];st.team='TODOS';try{A=applications();}catch(e){A=[];}st.team=keep;
+  var M=A.length?monData({A:A}):null;st._ipL={k:key,M:M};return M;
+}
+function ipName(M,p){if(!M)return null;for(var i=0;i<M.names.length;i++)if(ipSame(M.names[i],p))return M.names[i];return null;}
+/* serie diaria desde el primer dato hasta hoy (los días sin carga cuentan 0) */
+function ipSeries(p){
+  var M=ipLoads(),pn=ipName(M,p),today=oaToday(),first=M?Math.min(M.first,today-60*DAY):today-60*DAY,n=Math.round((today-first)/DAY)+1,tot=[],ind=[],days=[];
+  var indBy={};st.carga.forEach(function(r){if(r.ua==null||!ipSame(r.j,p)||norm(r.bloque).indexOf('individual')!==0)return;indBy[r.t]=(indBy[r.t]||0)+r.ua;});
+  for(var k=0;k<n;k++){var t=first+k*DAY;days.push(t);tot.push(pn&&M.pd[pn]&&M.pd[pn][t]||0);ind.push(indBy[t]||0);}
+  return {days:days,tot:tot,ind:ind,ac:acSeries(tot,'ewma')};
+}
+function ipMean(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:null;}
+function ipSD(a){if(a.length<2)return null;var m=ipMean(a);return Math.sqrt(a.reduce(function(s,v){return s+(v-m)*(v-m);},0)/(a.length-1));}
+function ipRoll(a,n){return a.map(function(v,i){var w=a.slice(Math.max(0,i-n+1),i+1).filter(function(x){return x!=null;});return w.length?ipMean(w):null;});}
+/* bienestar: índice diario (4–28, más alto = peor) → z-score individual frente a sus 28 días previos, con el signo cambiado (negativo = peor) */
+function ipWell(p,days){
+  var by={};st.rows.forEach(function(r){if(r.i!=null&&ipSame(r.j,p))by[r.t]=r.i;});
+  var ts=Object.keys(by).map(Number).sort(function(a,b){return a-b;});
+  var z=days.map(function(t){if(by[t]==null)return null;var base=ts.filter(function(x){return x<=t&&x>t-28*DAY;}).map(function(x){return by[x];});if(base.length<5)return null;var m=ipMean(base),sd=ipSD(base);return sd>0?-(by[t]-m)/sd:0;});
+  var today=oaToday(),b28=ts.filter(function(x){return x>today-28*DAY;}).map(function(x){return by[x];}),l7=ts.filter(function(x){return x>today-7*DAY;}).map(function(x){return by[x];});
+  var z7=(b28.length>=5&&l7.length&&ipSD(b28)>0)?-(ipMean(l7)-ipMean(b28))/ipSD(b28):null;
+  return {z:z,raw:days.map(function(t){return by[t]==null?null:by[t];}),z7:z7,n28:b28.length,alerts:z.filter(function(v){return v!=null&&v<=-1.5;}).length};
+}
+/* fuerza: e1RM por serie (Epley con las repeticiones en reserva: RIR o, si falta, 10 − RPE) */
+function ipE1(s){if(!(s.kg>0)||!(s.re>0))return null;var rir=s.rir!=null?s.rir:(s.rpe!=null?Math.max(0,10-s.rpe):0);return s.kg*(1+(s.re+rir)/30);}
+function ipFirstNum(x){var m=String(x||'').match(/\d+(?:[.,]\d+)?/g);if(!m)return null;var a=m.map(function(v){return Number(v.replace(',','.'));});return a.length>1?(a[0]+a[1])/2:a[0];}
+function ipExercises(p){
+  var by={};st.ireg.forEach(function(s){if(!ipSame(s.j,p)||!s.x)return;var k=norm(s.x);(by[k]=by[k]||{x:s.x,ses:{}});(by[k].ses[s.t]=by[k].ses[s.t]||[]).push(s);});
+  return Object.keys(by).map(function(k){
+    var o=by[k],ts=Object.keys(o.ses).map(Number).sort(function(a,b){return a-b;});
+    var S=ts.map(function(t){var ss=o.ses[t],e=ss.map(ipE1).filter(function(v){return v!=null;});return {t:t,n:ss.length,e1:e.length?Math.max.apply(null,e):null,kg:ipMean(ss.map(function(s){return s.kg;}).filter(function(v){return v!=null;})),rpe:ipMean(ss.map(function(s){return s.rpe;}).filter(function(v){return v!=null;})),reps:ss.reduce(function(a,s){return a+(s.re||0);},0),vol:ss.reduce(function(a,s){return a+(s.kg>0&&s.re?s.kg*s.re:0);},0)};});
+    var withE=S.filter(function(s){return s.e1!=null;}),f=withE[0],l=withE[withE.length-1],pct=(f&&l&&withE.length>1)?(l.e1/f.e1-1)*100:null;
+    var cls=pct==null?{k:'',s:'·',t:withE.length===1?'1 sesión':'peso corporal'}:pct>=IP_SESOI?{k:'v',s:'↑',t:'Mejora relevante'}:pct<=-IP_SESOI?{k:'r',s:'↓',t:'Empeora'}:{k:'',s:'→',t:'Sin cambio relevante'};
+    var a=S[S.length-1],b=S[S.length-2],ef='';
+    if(a&&b&&a.rpe!=null&&b.rpe!=null){var kgA=a.kg||0,kgB=b.kg||0;
+      if(kgA>=kgB-0.01&&a.rpe<=b.rpe-0.5)ef='<span class="cell v">Menos RPE con igual o más carga</span>';
+      else if(kgA<=kgB+0.01&&a.rpe>=b.rpe+0.5)ef='<span class="cell a">Más RPE con igual o menos carga</span>';
+      else ef='<span class="mut">Similar</span>';}
+    return {x:o.x,S:S,first:f,last:l,pct:pct,cls:cls,ef:ef};
+  }).sort(function(a,b){return (b.S.length-a.S.length)||esAlpha(a.x,b.x);});
+}
+function ipSessions(p){
+  var by={};st.ireg.forEach(function(s){if(!ipSame(s.j,p))return;var k=s.t+'|'+s.s;(by[k]=by[k]||{t:s.t,s:s.s,rows:[]}).rows.push(s);});
+  var car={};st.carga.forEach(function(r){if(ipSame(r.j,p)&&norm(r.bloque).indexOf('individual')===0)car[r.t+'|'+norm(String(r.bloque).replace(/^individual\s*·\s*/i,''))]=r;});
+  var wel={};st.rows.forEach(function(r){if(ipSame(r.j,p))wel[r.t]=r;});
+  return Object.keys(by).map(function(k){var o=by[k],pr=st.ip.filter(function(x){return ipSame(x.s,o.s)&&x.reg;}),c=car[o.t+'|'+norm(o.s)];
+    var obj=ipMean(pr.map(function(x){return ipFirstNum(x.rpe);}).filter(function(v){return v!=null;})),real=ipMean(o.rows.map(function(s){return s.rpe;}).filter(function(v){return v!=null;}));
+    return {t:o.t,s:o.s,done:o.rows.length,pres:pr.reduce(function(a,x){return a+(x.se||0);},0),obj:obj,real:real,rpe:c?c.rpe:null,min:c?c.min:null,ua:c?c.ua:null,w:wel[o.t]?wel[o.t].i:null};
+  }).sort(function(a,b){return b.t-a.t;});
+}
+function ipAdh(j,days){
+  var today=oaToday(),from=today-days*DAY+DAY,done={};
+  st.ireg.forEach(function(s){if(ipSame(s.j,j.j)&&s.t>=from&&s.t<=today)done[s.t]=1;});
+  var n=Object.keys(done).length,exp=j.ps>0?Math.round(j.ps*days/7):null;
+  if(exp==null){var pl={};st.iorg.forEach(function(o){if(ipSame(o.j,j.j)&&o.t>=from&&o.t<=today&&o.s&&norm(o.s)!=='descanso'&&!/eligi/i.test(o.h))pl[o.t]=1;});var np=Object.keys(pl).length;exp=np||null;}
+  return {n:n,exp:exp,pct:exp?Math.min(100,Math.round(n/exp*100)):null};
+}
+function ipLastDone(j){var b=null;st.ireg.forEach(function(s){if(ipSame(s.j,j)&&(b==null||s.t>b))b=s.t;});return b;}
+function ipWeek(S){var n=S.tot.length,w=S.tot.slice(Math.max(0,n-7)),pw=S.tot.slice(Math.max(0,n-14),Math.max(0,n-7));var sum=w.reduce(function(a,v){return a+v;},0),psum=pw.reduce(function(a,v){return a+v;},0),m=ipMean(w),sd=ipSD(w),mono=sd>0?m/sd:null;
+  return {sum:sum,psum:psum,mono:mono,strain:mono!=null?sum*mono:null,acwr:(S.ac[n-1]||{}).acwr};}
+/* esquema de Gabbett (2017): carga × bienestar → qué hacer */
+function ipDecide(W,K){
+  var z=W.z7,a=K.acwr,low=z!=null&&z<=-1.5,warn=z!=null&&z<=-1,hi=a!=null&&a>1.3,vhi=a!=null&&a>1.5,lo=a!=null&&a<0.8;
+  if(z==null&&a==null)return {k:'',t:'Faltan datos',d:'Hacen falta wellness y RPE de unas semanas para valorar su estado.'};
+  if(low&&hi)return {k:'r',t:'Reduce la carga',d:'Bienestar claramente por debajo de lo normal y carga reciente alta.'};
+  if(low)return {k:'a',t:'Investiga factores externos',d:'Bienestar bajo sin subida de carga: sueño, estudios, molestias, viajes.'};
+  if(vhi)return {k:'a',t:'Vigila la subida de carga',d:'La carga de esta semana está muy por encima de su habitual (ACWR > 1,5).'};
+  if(warn&&hi)return {k:'a',t:'Mantén, no subas',d:'Bienestar algo bajo y carga alta: conserva la dosis y revisa en 2-3 días.'};
+  if(warn)return {k:'a',t:'Vigila el bienestar',d:'Algo por debajo de su normalidad (Z entre −1 y −1,5): pregúntale cómo está y revisa en 2-3 días.'};
+  if(lo)return {k:'v',t:'Puede tolerar más (+5-10 %)',d:'Bienestar normal y carga reciente por debajo de su habitual.'};
+  return {k:'v',t:'Continúa con el plan',d:'Carga y bienestar dentro de su normalidad.'};
+}
+
+/* ---------- gráficos ---------- */
+function ipChart(o){
+  var w=720,h=o.h||220,m={l:40,r:12,t:12,b:24},iw=w-m.l-m.r,ih=h-m.t-m.b,n=o.days.length;
+  var X=function(i){return m.l+(n<=1?iw/2:i/(n-1)*iw);},bw=Math.max(2,iw/n*0.7),Y=function(v){return m.t+ih-(v-o.y0)/(o.y1-o.y0)*ih;};
+  var s='<svg class="ipc" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(o.label)+'">';
+  (o.bands||[]).forEach(function(b){var a=Math.max(b.from,o.y0),c=Math.min(b.to,o.y1);if(c<=a)return;s+='<rect x="'+m.l+'" y="'+Y(c).toFixed(1)+'" width="'+iw+'" height="'+(Y(a)-Y(c)).toFixed(1)+'" style="fill:'+b.c+'"/>';});
+  (o.yt||[]).forEach(function(v){var y=Y(v).toFixed(1);s+='<line x1="'+m.l+'" x2="'+(w-m.r)+'" y1="'+y+'" y2="'+y+'" style="stroke:var(--track);stroke-width:1"/><text x="'+(m.l-6)+'" y="'+(+y+4)+'" text-anchor="end" style="font-size:12px;fill:var(--muted)">'+(o.yf?o.yf(v):v)+'</text>';});
+  (o.refs||[]).forEach(function(r){var y=Y(r.v).toFixed(1);s+='<line x1="'+m.l+'" x2="'+(w-m.r)+'" y1="'+y+'" y2="'+y+'" style="stroke:'+(r.c||'var(--ink)')+';stroke-width:1.5;stroke-dasharray:5 4"/>'+(r.l?'<text x="'+(w-m.r-4)+'" y="'+(+y-5)+'" text-anchor="end" style="font-size:11px;fill:var(--muted)">'+esc(r.l)+'</text>':'');});
+  (o.bars||[]).forEach(function(b){b.v.forEach(function(v,i){var base=b.base?b.base[i]:0;if(!v)return;s+='<rect x="'+(X(i)-bw/2).toFixed(1)+'" y="'+Y(base+v).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,Y(base)-Y(base+v)).toFixed(1)+'" style="fill:'+b.c+'"><title>'+fd(o.days[i])+': '+fi(v)+' UA '+esc(b.n)+'</title></rect>';});});
+  (o.lines||[]).forEach(function(L){var seg=[],out=[];L.v.forEach(function(v,i){if(v==null){if(seg.length)out.push(seg);seg=[];return;}seg.push(X(i).toFixed(1)+','+Y(Math.max(o.y0,Math.min(o.y1,v))).toFixed(1));});if(seg.length)out.push(seg);
+    out.forEach(function(sg){if(sg.length>1)s+='<polyline points="'+sg.join(' ')+'" style="fill:none;stroke:'+L.c+';stroke-width:'+(L.w||2.5)+(L.dash?';stroke-dasharray:'+L.dash:'')+'"/>';});
+    if(L.dots)L.v.forEach(function(v,i){if(v==null)return;var al=L.alert&&L.alert(v);s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(Math.max(o.y0,Math.min(o.y1,v))).toFixed(1)+'" r="'+(al?5.5:3.5)+'" style="fill:'+(al?'var(--acc)':L.c)+';stroke:var(--sheet);stroke-width:1.5"><title>'+fd(o.days[i])+': '+f1(v)+(al?' · alerta':'')+'</title></circle>';});});
+  var step=Math.max(1,Math.round(n/6));for(var i=0;i<n;i+=step)s+='<text x="'+X(i).toFixed(1)+'" y="'+(h-6)+'" text-anchor="middle" style="font-size:12px;fill:var(--muted)">'+fs(o.days[i])+'</text>';
+  return s+'</svg>';
+}
+function ipSpark(S){var v=S.map(function(s){return s.e1;}).filter(function(x){return x!=null;});if(v.length<2)return '';var w=110,h=30,a=Math.min.apply(null,v),b=Math.max.apply(null,v);if(a===b){a-=1;b+=1;}
+  var pts=v.map(function(x,i){return (4+i/(v.length-1)*(w-8)).toFixed(1)+','+(h-4-(x-a)/(b-a)*(h-8)).toFixed(1);});
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" aria-hidden="true"><polyline points="'+pts.join(' ')+'" style="fill:none;stroke:var(--acc);stroke-width:2"/><circle cx="'+pts[pts.length-1].split(',')[0]+'" cy="'+pts[pts.length-1].split(',')[1]+'" r="3" style="fill:var(--acc)"/></svg>';}
+function ipNice(mx){if(!(mx>0))return {y1:100,yt:[0,50,100]};var p=Math.pow(10,Math.floor(Math.log10(mx))),st2=[1,2,2.5,5,10].map(function(k){return k*p;}).filter(function(k){return mx/k<=5;})[0]||p*10,y1=Math.ceil(mx/st2)*st2,t=[];for(var v=0;v<=y1+1e-9;v+=st2)t.push(Math.round(v));return {y1:y1,yt:t};}
+
+/* ---------- vista ---------- */
+function ipView(){
+  var V=st.ipv,J=st.ij.filter(function(j){return j.act;});
+  var h='<style>.ipc{width:100%;height:auto;display:block;margin:4px 0}.iptab td{vertical-align:middle}</style><div class="titlerow"><h1>Programas individuales</h1></div><p class="finding">Seguimiento de quien tiene programa propio: cumplimiento, carga total (equipo + individual), bienestar respecto a su propia normalidad y evolución de la fuerza. Los datos salen de la hoja «Programas individuales» y de CARGA.</p>';
+  if(!J.length)return h+'<p class="empty">No hay jugadores con programa individual. Añádelos en la pestaña JUGADORES de la hoja «Programas individuales».</p>';
+  if(!V.sel||!J.some(function(j){return j.j===V.sel;}))V.sel=J[0].j;
+  /* 1. resumen de todos */
+  var rows=J.map(function(j){var S=ipSeries(j.j),K=ipWeek(S),W=ipWell(j.j,S.days.slice(-28)),A=ipAdh(j,28),D=ipDecide(W,K),ld=ipLastDone(j.j);return {j:j,K:K,W:W,A:A,D:D,ld:ld};});
+  h+='<section class="block"><div class="sect"><h2>Todos</h2><span>últimos 28 días · toca un jugador para ver su detalle</span></div><div class="scroll"><table class="iptab"><thead><tr><th class="t">Jugador</th><th class="t">Programa</th><th>Cumplimiento</th><th>Última sesión</th><th>Carga 7 d</th><th>ACWR</th><th>Bienestar Z</th><th class="t">Qué hacer</th></tr></thead><tbody>'+
+    rows.map(function(r){var today=oaToday(),dd=r.ld!=null?Math.round((today-r.ld)/DAY):null,z=r.W.z7;
+      return '<tr data-ip="sel" data-v="'+esc(r.j.j)+'" style="cursor:pointer'+(r.j.j===V.sel?';background:var(--acc-soft)':'')+'"><td class="t"><b>'+esc(title(r.j.j))+'</b><br><span class="mut">'+esc(r.j.team)+(r.j.lib?' · elige él':'')+'</span></td><td class="t mut" style="max-width:220px">'+esc(r.j.prog)+'</td>'+
+        '<td>'+(r.A.pct!=null?'<span class="cell '+(r.A.pct>=80?'v':r.A.pct>=50?'a':'r')+'">'+r.A.pct+' %</span><br><span class="mut">'+r.A.n+' hechas · '+r.A.exp+' previstas</span>':'<b>'+r.A.n+'</b> <span class="mut">sesiones</span>')+'</td>'+
+        '<td>'+(r.ld!=null?fs(r.ld)+'<br><span class="mut">hace '+dd+' d</span>':'<span class="mut">ninguna</span>')+'</td><td>'+fi(r.K.sum)+' <span class="mut">UA</span></td><td>'+(r.K.acwr!=null?'<span class="cell '+(r.K.acwr>1.5?'r':r.K.acwr>1.3||r.K.acwr<0.8?'a':'v')+'">'+f1(r.K.acwr)+'</span>':'–')+'</td>'+
+        '<td>'+(z!=null?'<span class="cell '+(z<=-1.5?'r':z<=-1?'a':'v')+'">'+(z>0?'+':'')+f1(z)+'</span>':'–')+'</td><td class="t"><span class="pill '+(r.D.k||'n')+'">'+esc(r.D.t)+'</span></td></tr>';}).join('')+'</tbody></table></div></section>';
+  /* 2. detalle del jugador */
+  var j=J.filter(function(x){return x.j===V.sel;})[0],per=V.per,S=ipSeries(j.j),N=S.days.length,days=S.days.slice(N-per),tot=S.tot.slice(N-per),ind=S.ind.slice(N-per),K=ipWeek(S),W=ipWell(j.j,days),A=ipAdh(j,28),D=ipDecide(W,K);
+  var oth=tot.map(function(v,i){return Math.max(0,v-ind[i]);}),r7=ipRoll(S.tot,7).slice(N-per),SS=ipSessions(j.j),last=SS[0];
+  h+='<section class="block" style="margin-top:28px"><div class="sect"><h2>'+esc(title(j.j))+'</h2><div class="seg">'+[[28,'4 semanas'],[56,'8 semanas']].map(function(x){return '<button data-ip="per" data-v="'+x[0]+'" aria-pressed="'+(per===x[0])+'">'+x[1]+'</button>';}).join('')+'</div></div>'+
+    '<p class="mut" style="margin:-4px 0 12px">'+esc(j.prog)+(j.gr?' · entrena con el equipo: '+esc(j.gr):'')+(j.lib?' · elige él la sesión':'')+'</p>';
+  var dW=K.psum>0?Math.round((K.sum/K.psum-1)*100):null,dRPE=last&&last.real!=null&&last.obj!=null?last.real-last.obj:null;
+  h+='<div class="kpis k4">'+
+    kpi('Cumplimiento',A.pct!=null?A.pct+' %':String(A.n),A.pct!=null?(A.pct>=80?'':A.pct>=50?'a':'r'):'',A.exp?A.n+' hechas · '+A.exp+' previstas en 4 semanas':'sesiones en 4 semanas (elige él)')+
+    kpi('Carga 7 días',fi(K.sum)+' UA','',dW!=null?(dW>0?'+':'')+dW+' % frente a la semana anterior':'equipo + partidos + individual')+
+    kpi('ACWR (EWMA)',K.acwr!=null?f1(K.acwr):'–',K.acwr!=null?(K.acwr>1.5?'r':K.acwr>1.3||K.acwr<0.8?'a':''):'','aguda 7 d / crónica 28 d · ideal 0,8–1,3')+
+    kpi('Bienestar Z',W.z7!=null?(W.z7>0?'+':'')+f1(W.z7):'–',W.z7!=null?(W.z7<=-1.5?'r':W.z7<=-1?'a':''):'',W.z7!=null?'últimos 7 d frente a sus 28 d · '+W.alerts+' '+plural(W.alerts,'alerta','alertas'):'faltan respuestas de wellness')+
+    kpi('Monotonía',K.mono!=null?f1(K.mono):'–',K.mono!=null&&K.mono>2?'a':'','strain '+(K.strain!=null?fi(K.strain):'–')+' · media/SD de los 7 días')+
+    kpi('RPE real vs objetivo',dRPE!=null?(dRPE>0?'+':'')+f1(dRPE):'–',dRPE!=null&&Math.abs(dRPE)>=1?'a':'',last?'última sesión: '+f1(last.real)+' frente a '+f1(last.obj):'sin sesiones registradas')+'</div>';
+  h+='<div class="note '+(D.k==='r'?'warnt':'')+'" style="margin:14px 0;padding:14px 16px;border-radius:14px;background:'+(D.k==='r'?'var(--red-bg)':D.k==='a'?'var(--amb-bg)':D.k==='v'?'var(--ok-bg)':'var(--track)')+'"><b style="font-size:17px">'+esc(D.t)+'</b><br>'+esc(D.d)+'</div>';
+  /* gráfico 1: carga y media móvil */
+  var mx=Math.max.apply(null,tot.concat(r7.filter(function(v){return v!=null;})).concat([1])),sc=ipNice(mx);
+  h+='<div class="sect" style="margin-top:8px"><h2 style="font-size:16px">Carga diaria y media móvil de 7 días</h2><span><i style="display:inline-block;width:10px;height:10px;background:var(--acc);border-radius:2px"></i> individual · <i style="display:inline-block;width:10px;height:10px;background:var(--field-edge);border-radius:2px"></i> equipo y partidos · línea: media 7 d</span></div>'+
+    ipChart({days:days,y0:0,y1:sc.y1,yt:sc.yt,label:'Carga diaria de '+title(j.j),bars:[{v:oth,c:'var(--field-edge)',n:'equipo'},{v:ind,base:oth,c:'var(--acc)',n:'individual'}],lines:[{v:r7,c:'var(--ink)',w:2.5}]});
+  /* gráfico 2: bienestar Z */
+  var zr=ipRoll(W.z,7);
+  h+='<div class="sect" style="margin-top:18px"><h2 style="font-size:16px">Bienestar respecto a su normalidad (z-score)</h2><span>0 = su media de 28 días · por debajo de −1,5 = alerta · línea: media 7 d</span></div>'+
+    (W.z.some(function(v){return v!=null;})?ipChart({days:days,y0:-3,y1:3,yt:[-3,-2,-1,0,1,2,3],yf:function(v){return v>0?'+'+v:v;},h:200,label:'Bienestar z de '+title(j.j),bands:[{from:-3,to:-1.5,c:'var(--red-bg)'},{from:-1.5,to:-1,c:'var(--amb-bg)'}],refs:[{v:0,c:'var(--field-edge)'}],lines:[{v:W.z,c:'var(--field-edge)',w:1.5,dots:true,alert:function(v){return v<=-1.5;}},{v:zr,c:'var(--ink)',w:2.5}]}):'<p class="empty">Aún no hay suficientes respuestas de wellness (hacen falta 5 en 28 días).</p>');
+  /* fuerza */
+  var E=ipExercises(j.j);
+  h+='<div class="sect" style="margin-top:22px"><h2 style="font-size:16px">Fuerza: evolución por ejercicio</h2><span>e1RM con RIR (Epley) · cambio relevante ≥ '+IP_SESOI+' %</span></div>'+
+    (E.length?'<div class="scroll"><table><thead><tr><th class="t">Ejercicio</th><th>Sesiones</th><th>Primera</th><th>Última</th><th>Cambio</th><th class="t">Valoración</th><th>Evolución</th><th class="t">Carga interna:externa</th></tr></thead><tbody>'+
+      E.map(function(e){var l=e.S[e.S.length-1];return '<tr><td class="t">'+esc(e.x)+'</td><td>'+e.S.length+'</td><td>'+(e.first?fi(e.first.e1)+' kg':'–')+'</td><td>'+(e.last?fi(e.last.e1)+' kg':(l&&l.reps?l.reps+' reps':'–'))+'</td><td>'+(e.pct!=null?(e.pct>0?'+':'')+f1(e.pct)+' %':'–')+'</td>'+
+        '<td class="t"><span class="cell '+e.cls.k+'">'+e.cls.s+' '+esc(e.cls.t)+'</span></td><td>'+ipSpark(e.S)+'</td><td class="t">'+(e.ef||'<span class="mut">–</span>')+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Aún no hay series registradas.</p>');
+  /* sesiones */
+  h+='<div class="sect" style="margin-top:22px"><h2 style="font-size:16px">Sesiones registradas</h2><span>series hechas frente a las programadas</span></div>'+
+    (SS.length?'<div class="scroll"><table><thead><tr><th>Fecha</th><th class="t">Sesión</th><th>Series</th><th>RPE series</th><th>Objetivo</th><th>RPE sesión</th><th>Min</th><th>sRPE</th><th>Wellness</th></tr></thead><tbody>'+
+      SS.slice(0,20).map(function(s){var c=s.pres?Math.round(s.done/s.pres*100):null;return '<tr><td>'+wd(s.t)+' '+fs(s.t)+'</td><td class="t">'+esc(s.s)+'</td><td>'+s.done+(s.pres?' / '+s.pres+' <span class="cell '+(c>=90?'v':c>=60?'a':'r')+'">'+c+' %</span>':'')+'</td><td>'+f1(s.real)+'</td><td class="mut">'+f1(s.obj)+'</td><td>'+f1(s.rpe)+'</td><td>'+fi(s.min)+'</td><td>'+fi(s.ua)+'</td><td>'+(s.w!=null?icell(s.w):'–')+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="empty">Aún no hay sesiones registradas.</p>');
+  h+='<details class="glos"><summary>Cómo se calcula cada cosa</summary><dl>'+
+    '<dt>Carga (sRPE)</dt><dd>RPE de la sesión × minutos, en UA. Suma lo que hace con el equipo, los partidos y su programa individual.</dd>'+
+    '<dt>Media móvil de 7 días</dt><dd>Media de la carga de los últimos 7 días (los días sin entrenar cuentan 0). Quita el ruido del día a día.</dd>'+
+    '<dt>ACWR (EWMA)</dt><dd>Carga aguda / crónica con medias exponenciales: λ = 2/(N+1), 7 días la aguda y 28 la crónica. Da más peso a lo reciente. Zona habitual 0,8–1,3.</dd>'+
+    '<dt>Monotonía y strain</dt><dd>Monotonía = media / SD de la carga de los 7 días. Por encima de 2, cargas muy repetitivas. Strain = carga semanal × monotonía.</dd>'+
+    '<dt>Bienestar Z</dt><dd>Z = (valor − su media de 28 días) / su SD, con el signo cambiado para que negativo sea peor. Alerta si Z ≤ −1,5. El KPI compara la media de los últimos 7 días con sus 28 días.</dd>'+
+    '<dt>e1RM y cambio relevante</dt><dd>1RM estimado = kg × (1 + (reps + RIR) / 30); si no hay RIR se usa 10 − RPE. Se compara la primera sesión con la última: por debajo del '+IP_SESOI+' % no se considera un cambio relevante.</dd>'+
+    '<dt>Carga interna:externa</dt><dd>Si la misma carga (o más) le cuesta menos RPE que la vez anterior, es señal de adaptación. Si le cuesta más con igual o menos carga, mira la fatiga.</dd>'+
+    '<dt>Qué hacer</dt><dd>Esquema de Gabbett (2017): cruza la carga reciente (ACWR) con el bienestar Z. Es una ayuda, no sustituye tu criterio.</dd></dl></details>';
+  return h;
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('[data-ip]');if(!b||st.view!=='indiv')return;e.stopImmediatePropagation();
+  var a=b.getAttribute('data-ip'),v=b.getAttribute('data-v'),y=window.scrollY;
+  if(a==='sel')st.ipv.sel=v;else if(a==='per')st.ipv.per=+v;
+  render(true);if(a==='sel'){var s=document.querySelectorAll('.block')[1];if(s)s.scrollIntoView({behavior:'smooth',block:'start'});}else window.scrollTo(0,y);
+},true);
 
 var ready=window.QPDB.ready();
 ready.then(function(){plBoot();staffBadge();});
