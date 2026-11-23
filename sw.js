@@ -1,5 +1,5 @@
 /* Mateo QP · funciona sin conexión. La app se guarda en el iPad; los datos nunca pasan por esta caché. */
-var V = 'mqp-v6';
+var V = 'mqp-v7';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/maskable-512-v2.png', './icons/apple-touch-icon-v2.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (x) { return x !== V; }).map(function (x) { return caches.delete(x); })); }).then(function () { return self.clients.claim(); })); });
@@ -11,9 +11,11 @@ self.addEventListener('fetch', function (e) {
     return;
   }
   if (u.origin !== location.origin) return;
-  // la app: primero la red (para coger versiones nuevas), si no hay, la copia guardada
-  e.respondWith(fetch(e.request).then(function (n) { var cp = n.clone(); caches.open(V).then(function (c) { c.put(e.request, cp); }); return n; })
-    .catch(function () { return caches.match(e.request).then(function (r) { return r || caches.match('./index.html'); }); }));
+  // iconos y manifiesto: que los pida el navegador directamente (el iPhone los coge al «Añadir a pantalla de inicio»)
+  if (/\/icons\/|manifest\.webmanifest$/.test(u.pathname)) return;
+  // la app: primero la red (para coger versiones nuevas), si no hay, la copia guardada; la página solo se devuelve al abrir la app
+  e.respondWith(fetch(e.request).then(function (n) { if (n && n.ok && n.type === 'basic') { var cp = n.clone(); caches.open(V).then(function (c) { c.put(e.request, cp); }); } return n; })
+    .catch(function () { return caches.match(e.request).then(function (r) { return r || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()); }); }));
 });
 /* aviso del wellness (llega sin contenido: no lleva nombres ni datos) */
 self.addEventListener('push', function (e) {
