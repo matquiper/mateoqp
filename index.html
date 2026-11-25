@@ -5871,7 +5871,7 @@ function plSubscribe(silent){
 }
 function plPushCard(){
   var s=plPushState(),av=plAviso(),cu=av.modo==='md1'?'el día antes de cada partido':'los días de entreno y el día antes de cada partido';
-  var ar=(QPDB.meta&&QPDB.meta().avisoRpe)||{}, rtx=ar.on?' Y a las '+ar.hora+':00 de los días de entreno, para el RPE final.':'';
+  var ar=(QPDB.meta&&QPDB.meta().avisoRpe)||{}, rtx=ar.on?' Y a las '+ar.hora+':'+p2(ar.min==null?30:ar.min)+' de los días que entrenas o juegas, para el RPE final.':'';
   if(s==='activar')return '<section class="plc"><h2>🔔 Avisos del wellness y del RPE</h2><p class="sub">Te aviso a las '+av.hora+':00 '+cu+' para el wellness.'+rtx+'</p><button class="plb" data-pl="push" style="margin-top:4px">Activar avisos</button></section>';
   if(s==='instalar')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y código, y toca «Activar avisos».</p></section>';
   if(s==='denegado')return '<section class="plc"><p class="sub" style="margin:0">Avisos bloqueados. Para recibirlos: Ajustes del móvil → Notificaciones → Mateo QP.</p></section>';

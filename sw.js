@@ -30,7 +30,7 @@ function leerMeta() {
 }
 self.addEventListener('push', function (e) {
   e.waitUntil(leerMeta().then(function (m) {
-    var h = new Date().getHours(), hw = (m.aviso && m.aviso.hora != null) ? +m.aviso.hora : 9, hr = (m.avisoRpe && m.avisoRpe.hora != null) ? +m.avisoRpe.hora : 21;
+    var d = new Date(), h = d.getHours() + d.getMinutes() / 60, hw = (m.aviso && m.aviso.hora != null) ? +m.aviso.hora : 9, hr = (m.avisoRpe && m.avisoRpe.hora != null) ? +m.avisoRpe.hora + (+(m.avisoRpe.min == null ? 30 : m.avisoRpe.min)) / 60 : 21.5;
     var rpe = Math.abs(h - hr) < Math.abs(h - hw);
     return self.registration.showNotification(rpe ? 'Mateo QP · RPE final' : 'Mateo QP · Wellness',
       { body: rpe ? '¿Cómo de dura ha sido la sesión de hoy? Toca y responde tu RPE final.' : 'Toca para responder el wellness de hoy. Tarda 10 segundos.',
