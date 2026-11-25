@@ -228,8 +228,11 @@
     var i=info();
     if(!i.cfg)return {k:'warn',t:'Sin conectar con Google · datos solo en el iPad'};
     if(i.syncing)return {k:'load',t:'Sincronizando con Google…'};
-    if(i.err)return {k:i.pending?'warn':'err',t:(i.pending?i.pending+' cambios esperando · ':'')+i.err};
-    if(i.pending)return {k:'warn',t:i.pending+' cambios esperando para subir'};
+    var pd=i.pending===1?'1 cambio esperando':i.pending+' cambios esperando', c2=cfg()||{};
+    /* jugadores y cuerpo técnico no ven mensajes técnicos: solo que se enviará solo */
+    if(i.err&&c2.rol)return {k:'warn',t:i.pending?'Sin conexión · '+pd+': se enviará solo cuando vuelva la red':'Sin conexión: mostrando los últimos datos guardados'};
+    if(i.err)return {k:i.pending?'warn':'err',t:(i.pending?pd+' · ':'')+i.err};
+    if(i.pending)return {k:'warn',t:pd+' para subir'};
     return {k:lastRej?'warn':'ok',t:(lastRej?lastRej+' · ':'')+'Sincronizado con Google '+(i.at?hm(i.at):'')};
   }
   /* ---- pantalla de entrada: jugador / cuerpo técnico / administración ---- */
@@ -429,7 +432,7 @@ h1,h2,h3{margin:0}
 .top{grid-row:1;grid-column:2;display:flex;align-items:center;gap:12px;padding:0 16px 0 10px;min-width:0}
 .crumb{font-size:14px;color:var(--muted);margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crumb b{color:var(--ink);font-weight:600}
-.stamp{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.stamp{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .stamp .dot{width:9px;height:9px;border-radius:50%;background:var(--st-v);box-shadow:0 0 0 4px color-mix(in srgb,var(--st-v) 25%,transparent)}
 .stamp.warn .dot{background:var(--st-a);box-shadow:0 0 0 4px color-mix(in srgb,var(--st-a) 25%,transparent)}
 .stamp.err .dot{background:var(--st-r);box-shadow:0 0 0 4px color-mix(in srgb,var(--st-r) 25%,transparent)}
@@ -669,11 +672,23 @@ body.bdrag{-webkit-user-select:none;user-select:none;cursor:grabbing}
 .tasks .desc{margin:4px 0 0;font-size:14px;color:var(--ink);max-width:70ch}
 .cb-ctl{display:grid;grid-template-columns:160px minmax(0,1fr);gap:16px;align-items:end}
 .rpe6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.rpe6.all{grid-template-columns:repeat(12,minmax(0,1fr))}
 .rpe6 button{min-height:48px}
 .rpe6 button:disabled{opacity:.4;cursor:default}
 .rpe6 .clr{font-weight:500;color:var(--muted)}
 .rpe6.all button{min-height:44px}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+/* modo lista: una fila por jugador con el 0-10 en línea */
+.pgrid.plist{grid-template-columns:1fr;gap:6px}
+.pc.prow{display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);align-items:center;gap:10px;padding:6px 10px}
+.pc.prow .pc-h{margin:0;flex-direction:column;align-items:flex-start;gap:4px}
+.pc.prow .pc-h .chip{min-height:32px;font-size:12px;padding:0 10px}
+.rpe6.r11{grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+.rpe6.r11 button{min-height:44px;font-size:17px}
+.rpew{display:inline-block;margin-left:6px;font-size:12px;font-weight:700;color:var(--acc-ink)}
+.cprog{font-weight:700;font-size:14px}
+.csticky{position:sticky;bottom:0;z-index:5;background:var(--sheet);border-top:1px solid var(--edge);margin:12px -20px -20px;padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));border-radius:0 0 20px 20px}
+.cviewsw{display:flex;align-items:center;gap:8px;margin:0 0 10px}
 .pc{border:1px solid var(--edge);border-radius:14px;padding:10px 12px 12px}
 .pc.off{opacity:.6}
 .pc.out{background:var(--ctrl);border-style:dashed}
@@ -866,6 +881,10 @@ svg text.tot{fill:var(--ink);font-weight:600}
   .sctl{margin-left:0;width:100%}
   .pc{padding:10px 8px 12px}
   .rpe6{gap:4px}
+  .rpe6.all,.rpe6.r11{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .pc.prow{grid-template-columns:1fr}
+  .pc.prow .pc-h{flex-direction:row;align-items:center}
+  .csticky{margin:12px -14px -16px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px))}
   .savebar{padding:10px 12px;gap:8px}
   .savebar b{font-size:13px}
   .savebar .btn{flex:1 1 100%}
@@ -2921,11 +2940,21 @@ function lockedOf(b){
   i=savedInfo(b); Object.keys(i.rpe).forEach(function(k){m[k]=1;}); Object.keys(i.abs).forEach(function(k){m[k]=1;});
   return m;
 }
-function rpe6(bi,pi,cur,off){
-  var h='<div class="rpe6" role="group" aria-label="RPE">';
-  for(var i=1;i<=10;i++)h+='<button type="button" data-act="crpe" data-v="'+bi+'.'+pi+'.'+i+'" aria-pressed="'+(cur===i)+'" aria-label="RPE '+i+', '+RPEW[i].toLowerCase()+'"'+(off?' disabled':'')+'>'+i+'</button>';
+/* RPE 0-10 (escala CR-10, la misma que en el móvil del jugador). En modo lista, los 11 números en una fila */
+function rpe6(bi,pi,cur,off,lista){
+  var h='<div class="rpe6'+(lista?' r11':'')+'" role="group" aria-label="RPE">';
+  for(var i=0;i<=10;i++)h+='<button type="button" data-act="crpe" data-v="'+bi+'.'+pi+'.'+i+'" aria-pressed="'+(cur===i)+'" aria-label="RPE '+i+', '+RPEW[i].toLowerCase()+'"'+(off?' disabled':'')+'>'+i+'</button>';
   return h+'<button type="button" class="clr" data-act="crpe" data-v="'+bi+'.'+pi+'.x" aria-label="Borrar el RPE"'+(off?' disabled':'')+'>×</button></div>';
 }
+function rpeWord(v){return v==null?'':'<span class="rpew">'+f1(v)+' · '+esc(RPEW[Math.round(v)]||'')+'</span>';}
+/* tarjetas o lista: se recuerda en este dispositivo */
+function cList(){if(st.clist==null){try{st.clist=localStorage.getItem('mqp-clist')==='1';}catch(e){st.clist=false;}}return st.clist;}
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('[data-act="clist"],[data-act="sspopen"]'); if(!b)return; e.stopImmediatePropagation();
+  if(b.getAttribute('data-act')==='sspopen'){st.sspOpen=st.sspOpen||{};st.sspOpen[b.getAttribute('data-v')]=1;}
+  else{st.clist=b.getAttribute('data-v')==='1';try{localStorage.setItem('mqp-clist',st.clist?'1':'0');}catch(x){}}
+  var y=window.scrollY; render(true); window.scrollTo(0,y);
+},true);
 /* jugadores del bloque sin RPE ni «No participó» (y que no estén ya guardados): si se guarda así, cuentan 0 */
 /* «No participó» que se arrastra: quien ya tiene guardado «No participó» en otra tarea de esta sesión (y ningún RPE) sale como «No participó»
    en las demás tareas sin tocar nada. «Meter en la sesión» lo quita en toda la sesión; el botón «No participó» de cada tarea lo cambia solo en esa. */
@@ -2966,8 +2995,8 @@ function playersGrid(bi,b){
       h+='<div class="pc saved"><div class="pc-h"><span class="pname">'+who+'</span>'+(info.abs[k]?'<span class="pill n">No participó · guardado</span>':'<span class="pill v">✓ RPE '+f1(info.rpe[k])+' guardado</span>')+'</div></div>';
       return;
     }
-    var ab=cAbs(cs,p), au=cAuto(cs,p), cur=num(cs.rpe[p]), miss=!!cs.warn&&!ab&&cur==null;
-    h+='<div class="pc'+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+(miss?' <span class="pill a">Sin RPE</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab))+'</div>';
+    var ab=cAbs(cs,p), au=cAuto(cs,p), cur=num(cs.rpe[p]), miss=!!cs.warn&&!ab&&cur==null, L=cList();
+    h+='<div class="pc'+(L?' prow':'')+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+playerMark(p)+(miss?' <span class="pill a">Sin RPE</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+(!ab&&cur!=null?' '+rpeWord(cur):'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab,L))+'</div>';
   });
   (st._cout||[]).forEach(function(x){h+=outCard(x);});
   return h;
@@ -2977,6 +3006,8 @@ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.c
 function blockActions(b,bi){
   var cs=cbState(b), saved=blockSaved(b), late=lateMode(b), pend=pendingOf(cs,b), lk=lockedOf(b), free=(st._cro||[]).filter(function(p){return !lk[norm(p)];}).length, k=b.byS?actS(b):null;
   var what=b.byS?'esta serie':(b.final?'el RPE final':'este bloque');
+  /* progreso a la vista en la barra fija: cuántos llevan RPE o «No participó» de los que faltan por guardar */
+  var tot=free, hechos=tot-pend.length, prog='<div class="cprog" aria-live="polite">'+hechos+' de '+tot+' '+plural(tot,'jugador','jugadores')+(pend.length?' · faltan '+pend.length:' · todos listos')+'</div>';
   if(cs.warn&&pend.length){
     return '<div class="warnbox" role="alert"><b>'+pend.length+' '+plural(pend.length,'jugador sin RPE','jugadores sin RPE')+'</b><p>'+esc(pend.map(title).join(', '))+' '+plural(pend.length,'contará','contarán')+' 0 en '+what+'. Pon su RPE o marca «No participó» si no '+plural(pend.length,'jugó','jugaron')+'.</p>'+
       '<div class="actions"><button class="btn primary lg" data-act="csavego" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>Guardar igual</button><button class="btn lg" data-act="cwarn" data-v="'+bi+'">Volver a revisar</button></div></div>';
@@ -2986,7 +3017,7 @@ function blockActions(b,bi){
     h+='<p class="mut note">Todos los jugadores tienen su RPE o su «No participó» guardado en '+what+'. Para corregir uno, cámbialo en la pestaña CARGA de tu hoja.</p>';
   } else {
     var lbl=late?'Añadir RPE que faltan':(b.byS?'Guardar la serie '+k+(serN(b)>1?' de '+serN(b):''):(b.final?'Guardar el RPE final':'Guardar RPE de este bloque'));
-    h+='<div class="actions"><button class="btn primary lg" data-act="csave" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>'+lbl+(pend.length?' ('+pend.length+' sin RPE)':'')+'</button></div>';
+    h+='<div class="actions" style="align-items:center;justify-content:space-between;margin-top:0">'+prog+'<button class="btn primary lg" data-act="csave" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>'+lbl+(pend.length?' ('+pend.length+' sin RPE)':'')+'</button></div>';
     if(late)h+='<p class="mut note">Ya hay RPE guardado en '+what+': aquí solo se añade a quien aún no lo tiene y lo guardado no se duplica. Para corregir un RPE ya guardado, cámbialo en la pestaña CARGA de tu hoja.</p>';
   }
   if(late&&!b.byS&&!b.final)h+='<button type="button" class="linkbtn" data-act="cfull" data-v="'+bi+'.1">¿Es otra sesión con el mismo bloque? Registrarlo completo</button>';
@@ -3028,6 +3059,8 @@ function campoSspHtml(r,bi,ri){
   var task=sspFromNote(r.n), cat=task?sspCatOf(task):'', ne=r.ne, ok=sspApplies(r);
   if(task)return '<span class="tag ssp-tag">'+esc(cat)+' · '+esc(task)+' · NE '+(ne!=null?f1(ne):f1(SSPMAP[task]))+'</span> <button type="button" class="linkbtn" style="display:inline;min-height:32px" data-act="sspclr" data-v="'+bi+'.'+ri+'">'+(ok?'Cambiar':'Quitar')+'</button>';
   if(!ok)return '';
+  /* plegado: solo un enlace pequeño; al tocarlo sale el desplegable (así los jugadores quedan arriba) */
+  if(!(st.sspOpen||{})[bi+'.'+ri])return '<button type="button" class="linkbtn" style="display:inline;min-height:32px;font-size:13px" data-act="sspopen" data-v="'+bi+'.'+ri+'">+ Tipo de tarea (Camenforte)</button>';
   return '<label class="fld ssp-pick"><span>Tipo de tarea (Camenforte)</span><select data-ssp="'+bi+'.'+ri+'">'+sspOptions('')+'</select></label>';
 }
 function blockCard(b,bi){
@@ -3053,11 +3086,11 @@ function blockCard(b,bi){
   if(b.canS&&!blockSaved(b))h+='<div class="rmodeRow"><span class="lblx">¿Cómo recoges el RPE de esta tarea?</span><div class="seg" role="group" aria-label="Forma de recoger el RPE"><button type="button" data-act="cmode" data-v="'+bi+'.0" aria-pressed="'+(!b.byS)+'">Un RPE por tarea</button><button type="button" data-act="cmode" data-v="'+bi+'.1" aria-pressed="'+b.byS+'">Un RPE por serie ('+b.ns+')</button></div></div>';
   if(b.byS)h+='<div id="ss-'+bi+'">'+seriesStrip(b,bi)+'</div><p class="mut note" style="margin:2px 0 8px">'+(planned>0?'Cada serie dura '+esc(f1(planned))+' min si no escribes otra cosa.':'<b>Esta tarea no tiene minutos en el plan:</b> escribe la duración de cada serie.')+' «No participó» vale para toda la tarea.</p>';
   h+='<div class="cb-ctl"><div class="fld"><label for="cd-'+bi+'">'+(b.byS?'Duración de la serie '+k+' (min)':(b.cfin?'Duración del circuito (min)':b.final?'Duración de la sesión (min)':(late?'Duración (min)':'Duración real (min)')))+'</label><input id="cd-'+bi+'" data-cd="'+bi+'" type="number" inputmode="decimal" min="0" step="any" value="'+esc(cs.dur)+'" placeholder="'+(dph?esc(f1(dph)):'min')+'"></div><div class="cb-all"><span class="lblx">RPE para todos los pendientes</span><div class="rpe6 all" role="group" aria-label="RPE para todos">';
-  for(var i=1;i<=10;i++)h+='<button type="button" data-act="call" data-v="'+bi+'.'+i+'" aria-label="Poner RPE '+i+' a todos los pendientes">'+i+'</button>';
+  for(var i=0;i<=10;i++)h+='<button type="button" data-act="call" data-v="'+bi+'.'+i+'" aria-label="Poner RPE '+i+' a todos los pendientes">'+i+'</button>';
   h+='<button type="button" class="clr" data-act="cclr" data-v="'+bi+'" aria-label="Borrar todos los RPE de esta '+(b.byS?'serie':'tarea')+'">×</button></div></div></div>';
   if(b.byS&&k>1)h+='<div class="actions" style="margin-top:10px"><button type="button" class="btn" data-act="ccopy" data-v="'+bi+'">Copiar los RPE de la serie '+(k-1)+' a quien aún no tiene</button></div>';
-  h+='<p class="mut" id="bs-'+bi+'" style="margin:8px 0 10px;font-size:13px">'+blockSummary(b)+'</p><div class="pgrid" id="pg-'+bi+'">'+playersGrid(bi,b)+'</div>';
-  h+='<div id="ca-'+bi+'">'+blockActions(b,bi)+'</div></div></article>';
+  h+='<p class="mut" id="bs-'+bi+'" style="margin:8px 0 10px;font-size:13px">'+blockSummary(b)+'</p><div class="pgrid'+(cList()?' plist':'')+'" id="pg-'+bi+'">'+playersGrid(bi,b)+'</div>';
+  h+='<div id="ca-'+bi+'" class="csticky">'+blockActions(b,bi)+'</div></div></article>';
   return h;
 }
 /* La carga por series (sRPE) ya no es una pestaña: se ve desde aquí, cuando hay tareas registradas serie a serie */
@@ -3105,6 +3138,7 @@ function cCampo(D){
   }
   /* el jugador invitado es poco frecuente: queda plegado para que la primera tarea se vea sin bajar */
   h+=toast+gkToggle()+'<details class="indiv gdet"'+(st.extra.length?' open':'')+'><summary>Añadir un jugador invitado'+(st.extra.length?' ('+st.extra.length+')':'')+'</summary><div style="padding-bottom:6px">'+guestHtml(cp.team)+'</div></details>';
+  h+='<div class="cviewsw"><span class="lblx" style="margin:0">Ver jugadores en</span><div class="seg" role="group" aria-label="Cómo ver a los jugadores"><button type="button" data-act="clist" data-v="0" aria-pressed="'+(!cList())+'">Tarjetas</button><button type="button" data-act="clist" data-v="1" aria-pressed="'+cList()+'">Lista</button></div></div>';
   if(blocks.length>1)h+='<p class="mut bhint">Para cambiar el orden, mantén pulsado un bloque 5 segundos y arrástralo encima o debajo de otro.'+(bordGet(bordKey())?' <button type="button" class="linkbtn" style="display:inline;min-height:0" data-act="bordreset">Volver al orden del plan</button>':'')+'</p>';
   var acAt=acIndex(all,acRows);
   all.forEach(function(b,bi){if(bi===acAt)h+=acSlot();h+=blockCard(b,bi);});
@@ -3902,6 +3936,8 @@ function render(force,soft){
     if(!st.rows.length){app.innerHTML=stateMsg('La pestaña DATOS no tiene filas todavía','Comprueba que el formulario tiene respuestas de jugadores que están en la pestaña JUGADORES de tu hoja.',true);return;}
     html=(st.tab==='dia'?dayView():st.tab==='jugador'?playerView():evoView())+'<p class="foot">'+st.rows.length+' respuestas de '+uniq(st.rows.map(function(r){return r.j;})).length+' jugadores. Rojo: índice desde '+st.th.ir+' o 2 parámetros desde '+st.th.pr+'. Ámbar: índice desde '+st.th.ia+' o 1 parámetro desde '+st.th.pr+'. Umbrales leídos de la pestaña AJUSTES de tu hoja.</p>';
   }
+  /* programas individuales: su propuesta (Gabbett) también en Plantilla y en Bienestar, no solo en su pestaña */
+  if(typeof ipBlock==='function'&&((v==='hoy'&&st.htab!=='disp'&&st.htab!=='jugadores')||(v==='bienestar'&&st.tab==='dia')))html+=ipBlock();
   app.innerHTML=heroWrap(html)+mqSig();
   /* con seis pestañas la barra se desplaza: la elegida queda a la vista sin mover la página */
   var tb=app.querySelector('.tabs'), ts=tb&&tb.querySelector('.tab[aria-selected="true"]');
@@ -4877,7 +4913,7 @@ function ingestGroups(payload){
 }
 function groupForPosition(pos){return pos==='Portero'?'Porteros':pos==='Mediocentro'?'Mediocentros':pos==='Lateral'||pos==='Extremo'?'Laterales y extremos':pos==='Central'||pos==='Delantero'?'Centrales y delanteros':'';}
 function positionForGroup(group){return group==='Porteros'?'Portero':group==='Mediocentros'?'Mediocentro':group==='Laterales y extremos'?'Lateral':group==='Centrales y delanteros'?'Central':'';}
-function playerMark(player){var x=st.grp.filter(function(r){return norm(r.j)===norm(player);})[0];return x&&(x.pos==='Portero'||x.g==='Porteros')?' <span class="pill a">POR</span>':'';}
+function playerMark(player){var x=st.grp.filter(function(r){return norm(r.j)===norm(player);})[0];return (x&&(x.pos==='Portero'||x.g==='Porteros')?' <span class="pill a">POR</span>':'')+(typeof ipMark==='function'?ipMark(player):'');}
 function savePlayerPosition(player,team,pos){
   var group=groupForPosition(pos)||'',old=st.grp.filter(function(x){return norm(x.j)===norm(player);})[0],row=[team,player,group,fd(oaToday()),pos||''];
   if(!mcp)return Promise.reject({code:'no_mcp'});
@@ -5185,6 +5221,7 @@ function calCell(t,m0,infos,today,sel){
     i.mt.forEach(function(m){h+='<span class="km"><b class="kab">'+(teams.length>1?teamLetter(team):'')+'</b>'+esc(matchTxt(m))+'</span>'; parts.push(teamName(team)+' '+matchTxt(m));});
   });
   teams.forEach(function(team){calDayStatuses(team,t,infos[team][t]).forEach(function(status){h+='<span class="pill ktrain '+(status==='Hecho'?'v':status==='Partido'?'p':'a')+'">'+(teams.length>1?'<b>'+teamLetter(team)+'</b> ':'')+esc(status)+'</span>';parts.push(teamName(team)+': '+status);});});
+  var ind=typeof ipDayList==='function'?ipDayList(t):[]; if(ind.length){h+='<span class="pill ktrain v">Indiv. ×'+ind.length+'</span>'; parts.push(ind.length+' '+plural(ind.length,'sesión individual','sesiones individuales'));}
   var al=esc(lab+(parts.length?'. '+parts.join('. '):'. Sin nada'));
   return h.replace('@@',function(){return al;})+'</button>';
 }
@@ -5246,6 +5283,8 @@ function calPanel(infos,L,sel){
     }
     h+='</div>';
   });
+  var ind=typeof ipDayList==='function'?ipDayList(sel):[];
+  if(ind.length)h+='<div class="kteam"><h3>Programas individuales</h3><ul class="ktk">'+ind.map(function(x){return '<li><button class="nm" data-act="ipgo" data-v="'+esc(x.j)+'">'+esc(title(x.j))+'</button> <small>'+esc(x.s)+' · '+x.n+' '+plural(x.n,'serie','series')+'</small></li>';}).join('')+'</ul></div>';
   if(st.kf&&st.kf.mode==='match')h+=mtForm();
   return h+'</section>';
 }
@@ -5979,6 +6018,7 @@ function plClick(e){
   if(a==='me'){QPDB.openSettings();return;}
   if(a==='push'){plSubscribe(false);return;}
   if(a==='ind'){indStart(v);return;}
+  if(a==='indp'){var qq=String(v).split('|');indStart(qq.slice(1).join('|'),+qq[0]);return;}
   if(a==='wfany'){PL.wfAny=true;plRender();return;}
   if(a==='wf'){var q=v.split('.');PL.wf[q[0]]=+q[1];plRender();return;}
   if(a==='day'){PL.day=+v;PL.rpe=null;PL.min=null;PL.msg=null;plRender();return;}
@@ -6042,16 +6082,19 @@ function indLast(exName){
   if(!R.length)return null; var t=Math.max.apply(null,R.map(function(x){return x.t;})); var S=R.filter(function(x){return x.t===t;}).sort(function(a,b){return (a.s||0)-(b.s||0);});
   return {t:t,sets:S};
 }
-function indKey(){return 'mqp-ind-'+plDay(0)+'-'+norm(IND.ses);}
+function indDay(){return IND.day||plDay(0);}
+function indKey(){return 'mqp-ind-'+indDay()+'-'+norm(IND.ses);}
+/* sesiones empezadas otro día y sin guardar (las series siguen en este móvil): se avisa para terminarlas. Más de 3 días: se descartan */
+function indPending(){var out=[],t0=plDay(0),S=indSessions();try{for(var i=localStorage.length-1;i>=0;i--){var k=localStorage.key(i),m=k&&k.match(/^mqp-ind-(\d+)-(.+)$/);if(!m)continue;var d=+m[1];if(d>=t0)continue;if(d<plDay(3)){localStorage.removeItem(k);continue;}var o=null;try{o=JSON.parse(localStorage.getItem(k));}catch(e){}if(!o||!o.d)continue;var s=S.filter(function(x){return norm(x)===m[2];})[0];if(s)out.push({t:d,s:s});}}catch(e){}return out.sort(function(a,b){return b.t-a.t;});}
 function indSave(){try{localStorage.setItem(indKey(),JSON.stringify({d:IND.d,step:IND.step,t0:IND.t0,fin:IND.fin}));}catch(e){}}
-function indStart(ses){
-  IND.ses=ses;IND.open=true;IND.msg=null;IND.wf={};var P=indProg(ses);
+function indStart(ses,day){
+  IND.day=day||null;IND.ses=ses;IND.open=true;IND.msg=null;IND.wf={};var P=indProg(ses);
   IND.warm=P.filter(function(r){return norm(plG(r,'registrar'))==='no';});
   IND.ex=P.filter(function(r){return norm(plG(r,'registrar'))!=='no';});
   var saved=null;try{saved=JSON.parse(localStorage.getItem(indKey())||'null');}catch(e){}
   if(saved&&saved.d){IND.d=saved.d;IND.step=saved.step||0;IND.t0=saved.t0||Date.now();IND.fin=saved.fin||{rpe:null,min:null};}
   else{
-    IND.t0=Date.now();IND.fin={rpe:null,min:null};IND.step=plWfDone(plDay(0))?1:0;
+    IND.t0=Date.now();IND.fin={rpe:null,min:null};IND.step=(IND.day||plWfDone(plDay(0)))?1:0;
     IND.d=IND.ex.map(function(r){var n=Math.max(1,Math.round(indFirstNum(plG(r,'series'))||3)),L=indLast(plG(r,'ejercicio')),reps=indFirstNum(plG(r,'reps')),sets=[];
       for(var i=0;i<n;i++){var l=L&&(L.sets[i]||L.sets[L.sets.length-1]);sets.push({reps:reps!=null?reps:(l&&l.reps!=null?l.reps:''),kg:l&&l.kg!=null?l.kg:'',rpe:'',rir:'',ok:false});}
       return {sets:sets};});
@@ -6120,7 +6163,7 @@ function indClick(e){
     IND.step=Math.min(indSteps()-1,IND.step+1);indSave();indRender();window.scrollTo(0,0);return;
   }
   if(a==='save'){
-    var me2=plMe(),t2=plDay(0),rows=[];
+    var me2=plMe(),t2=indDay(),rows=[];
     IND.ex.forEach(function(r,i){IND.d[i].sets.forEach(function(x,k){if(!x.ok&&x.kg===''&&x.rpe===''&&x.rir==='')return;rows.push([fd(t2),me2.n,IND.ses,plG(r,'ejercicio'),k+1,num(x.reps),num(x.kg),num(x.rpe),num(x.rir),x.ok?'':'Sin marcar como hecha','']);});});
     IND.busy=true;IND.msg=null;indRender();
     var o={fecha:fd(t2),team:me2.team,j:me2.n,tipo:'Fuerza',ex:'Sesión individual',min:IND.fin.min,rpe:IND.fin.rpe,bloque:'Individual · '+IND.ses,parte:'Individual',n:rows.length+' series'};
@@ -6146,7 +6189,9 @@ function indPick(){
 function indCard(){
   if(!plRows('IND_PROG').length)return '';
   if(!document.getElementById('indcss')){var cs=document.createElement('style');cs.id='indcss';cs.textContent=IND_CSS;document.head.appendChild(cs);}
-  var r=indToday(),h='<section class="plc">';
+  var r=indToday(),h='<section class="plc">',pend=indPending();
+  /* sesión de otro día sin guardar: no cuenta en su carga ni en el seguimiento hasta que la guarde con su RPE */
+  if(pend.length)h+=pend.slice(0,2).map(function(x){return '<div class="plmsg" style="margin:0 0 12px"><b>Te quedó sin guardar «'+esc(x.s)+'» del '+esc(wd(x.t)+' '+fs(x.t))+'.</b> Tus series siguen en este móvil: termínala y pon tu RPE para que cuente.<button class="plb" style="margin-top:10px;min-height:48px;font-size:16px" data-pl="indp" data-v="'+x.t+'|'+esc(x.s)+'">Terminar y guardar</button></div>';}).join('');
   if(indFree())return h+indPick()+'</section>';   /* si elige él: siempre todos sus planes, aunque la hoja tenga uno apuntado para hoy */
   if(r){var s=String(plG(r,'sesion individual')).trim(),done=indDoneToday(s),n=indProg(s).filter(function(x){return norm(plG(x,'registrar'))!=='no';}).length,draft=false;try{draft=!!localStorage.getItem('mqp-ind-'+plDay(0)+'-'+norm(s));}catch(e){}
     h+='<div class="indcard"><span class="ic">🏋️</span><div style="flex:1"><h2 style="margin:0">Tu entrenamiento individual</h2><p class="sub" style="margin:2px 0 0">'+esc(s)+' · '+n+' ejercicios'+(plG(r,'notas')?' · '+esc(plG(r,'notas')):'')+'</p></div></div>'+
@@ -6255,6 +6300,25 @@ function ipDecide(W,K){
   return {k:'v',t:'Continúa con el plan',d:'Carga y bienestar dentro de su normalidad.'};
 }
 
+/* ---------- integración con el resto de la app ---------- */
+function ipActive(p){return (st.ij||[]).filter(function(j){return j.act&&ipSame(j.j,p);})[0]||null;}
+/* sesiones individuales hechas un día: [{j, s, n series}] */
+function ipDayList(t){var m={};(st.ireg||[]).forEach(function(s){if(s.t!==t)return;var k=norm(s.j)+'|'+norm(s.s);m[k]=m[k]||{j:s.j,s:s.s,n:0};m[k].n++;});return Object.keys(m).map(function(k){return m[k];});}
+/* distintivo junto al nombre (campo, plantilla, partido…): «Indiv.» y ✓ si ese día ya hizo su sesión */
+function ipMark(p){var j=ipActive(p);if(!j)return '';var t=(st.view==='carga'&&st.cp&&st.cp.fecha)?cdate(st.cp.fecha):oaToday(),hecho=(st.ireg||[]).some(function(s){return s.t===t&&ipSame(s.j,p);});
+  return ' <span class="pill '+(hecho?'v':'n')+'" title="Programa individual: '+esc(j.prog)+(hecho?' · hecho ese día':'')+'">Indiv.'+(hecho?' ✓':'')+'</span>';}
+/* bloque «Programas individuales» para Plantilla y Bienestar: qué hacer con cada uno y si va al día */
+function ipBlock(){
+  var J=(st.ij||[]).filter(function(j){return j.act&&(st.team==='TODOS'||!j.team||teamFull(j.team)===st.team);});if(!J.length)return '';
+  var today=oaToday(),R=J.map(function(j){var S=ipSeries(j.j),K=ipWeek(S),W=ipWell(j.j,S.days.slice(-28)),D=ipDecide(W,K),ld=ipLastDone(j.j),age=ld==null?null:Math.round((today-ld)/DAY);return {j:j,D:D,ld:ld,age:age};});
+  R.sort(function(a,b){var o={r:0,a:1,v:2,'':3};return (o[a.D.k]-o[b.D.k])||((b.age==null?99:b.age)-(a.age==null?99:a.age));});
+  return '<section class="block"><div class="sect"><h2>Programas individuales</h2><span>propuesta según carga y bienestar · toca para ver el detalle</span></div><div class="scroll"><table><tbody>'+R.map(function(x){
+    var tarde=x.age==null||x.age>=7;
+    return '<tr><td class="t"><button class="nm" data-act="ipgo" data-v="'+esc(x.j.j)+'">'+esc(title(x.j.j))+'</button></td><td class="t"><span class="pill '+(x.D.k||'n')+'">'+esc(x.D.t)+'</span></td><td class="t'+(tarde?'':' mut')+'">'+(x.ld==null?'Aún sin sesiones':'Última sesión '+fs(x.ld)+' ('+(x.age===0?'hoy':'hace '+x.age+' d')+')')+(tarde?' <span class="pill a">lleva días sin hacerlo</span>':'')+'</td></tr>';}).join('')+'</tbody></table></div></section>';
+}
+function teamFull(s){var n=norm(s);return n.indexOf('juv')===0?TEAMS[0]:n.indexOf('reg')===0?TEAMS[1]:s;}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-act="ipgo"]');if(!b)return;e.stopImmediatePropagation();st.ipv.sel=b.getAttribute('data-v');st.view='indiv';render(true);window.scrollTo(0,0);},true);
+
 /* ---------- gráficos ---------- */
 function ipChart(o){
   var w=720,h=o.h||220,m={l:40,r:12,t:12,b:24},iw=w-m.l-m.r,ih=h-m.t-m.b,n=o.days.length;
@@ -6279,7 +6343,7 @@ function ipNice(mx){if(!(mx>0))return {y1:100,yt:[0,50,100]};var p=Math.pow(10,M
 function ipView(){
   var V=st.ipv,J=st.ij.filter(function(j){return j.act;});
   var h='<style>.ipc{width:100%;height:auto;display:block;margin:4px 0}.iptab td{vertical-align:middle}</style><div class="titlerow"><h1>Programas individuales</h1></div><p class="finding">Seguimiento de quien tiene programa propio: cumplimiento, carga total (equipo + individual), bienestar respecto a su propia normalidad y evolución de la fuerza. Los datos salen de la hoja «Programas individuales» y de CARGA.</p>';
-  if(!J.length)return h+'<p class="empty">No hay jugadores con programa individual. Añádelos en la pestaña JUGADORES de la hoja «Programas individuales».</p>';
+  if(!J.length)return h+'<p class="empty">No hay jugadores con programa individual. Añádelos en la pestaña JUGADORES de la hoja «Programas individuales».</p>'+ipEditor();
   if(!V.sel||!J.some(function(j){return j.j===V.sel;}))V.sel=J[0].j;
   /* 1. resumen de todos */
   var rows=J.map(function(j){var S=ipSeries(j.j),K=ipWeek(S),W=ipWell(j.j,S.days.slice(-28)),A=ipAdh(j,28),D=ipDecide(W,K),ld=ipLastDone(j.j);return {j:j,K:K,W:W,A:A,D:D,ld:ld};});
@@ -6330,7 +6394,7 @@ function ipView(){
     '<dt>e1RM y cambio relevante</dt><dd>1RM estimado = kg × (1 + (reps + RIR) / 30); si no hay RIR se usa 10 − RPE. Se compara la primera sesión con la última: por debajo del '+IP_SESOI+' % no se considera un cambio relevante.</dd>'+
     '<dt>Carga interna:externa</dt><dd>Si la misma carga (o más) le cuesta menos RPE que la vez anterior, es señal de adaptación. Si le cuesta más con igual o menos carga, mira la fatiga.</dd>'+
     '<dt>Qué hacer</dt><dd>Esquema de Gabbett (2017): cruza la carga reciente (ACWR) con el bienestar Z. Es una ayuda, no sustituye tu criterio.</dd></dl></details>';
-  return h;
+  return h+ipEditor();
 }
 document.addEventListener('click',function(e){
   var b=e.target.closest&&e.target.closest('[data-ip]');if(!b||st.view!=='indiv')return;e.stopImmediatePropagation();
@@ -6339,6 +6403,38 @@ document.addEventListener('click',function(e){
   render(true);if(a==='sel'){var s=document.querySelectorAll('.block')[1];if(s)s.scrollIntoView({behavior:'smooth',block:'start'});}else window.scrollTo(0,y);
 },true);
 
+/* ---------- editor sencillo de programas: añadir ejercicios (o una sesión nueva) desde la app ----------
+   Escribe una fila en PROGRAMAS de la hoja «Programas individuales». Para cambiar o borrar lo que ya hay, se edita la hoja. */
+st.ipe={ses:'',nueva:'',b:'',x:'',se:'',re:'',kg:'',rir:'',desc:'',vid:'',reg:'Sí',ind:'',msg:null,saving:false};
+function ipEditor(){
+  var E=st.ipe,S=uniq((st.ip||[]).map(function(r){return r.s;})),nueva=E.ses==='__nueva',ses=nueva?E.nueva.trim():(E.ses||S[0]||'');
+  if(!E.ses&&S.length)E.ses=S[0];
+  var list=(st.ip||[]).filter(function(r){return ipSame(r.s,ses);}).sort(function(a,b){return (a.o||0)-(b.o||0);});
+  var fl=function(id,lab,inp){return '<div class="fld"><label for="'+id+'">'+lab+'</label>'+inp+'</div>';};
+  var inp=function(k,ph,type){return '<input id="ipe-'+k+'" data-ipe="'+k+'" value="'+esc(E[k])+'" placeholder="'+esc(ph||'')+'"'+(type?' type="'+type+'"':'')+'>';};
+  var h='<section class="block"><div class="sect"><h2>Añadir a un programa</h2><span>se guarda en la pestaña PROGRAMAS · para cambiar o borrar, edita la hoja</span></div>';
+  h+='<div class="form">'+fl('ipe-ses','Sesión','<select id="ipe-ses" data-ipe="ses">'+S.map(function(s){return '<option value="'+esc(s)+'"'+(E.ses===s?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'<option value="__nueva"'+(nueva?' selected':'')+'>+ Sesión nueva…</option></select>')+
+    (nueva?fl('ipe-nueva','Nombre de la sesión nueva',inp('nueva','Ej.: Tren superior · Meso 2')):'')+
+    fl('ipe-b','Bloque',inp('b','Ej.: Fuerza principal'))+fl('ipe-x','Ejercicio',inp('x','Ej.: Sentadilla búlgara'))+
+    fl('ipe-se','Series',inp('se','3','number'))+fl('ipe-re','Repeticiones',inp('re','8 o 30"'))+fl('ipe-kg','Carga / intensidad',inp('kg','Ej.: 20 kg o RPE 7'))+fl('ipe-rir','RIR objetivo',inp('rir','2','number'))+
+    fl('ipe-desc','Descanso',inp('desc',"1'30''"))+fl('ipe-vid','Vídeo (enlace)',inp('vid','https://…','url'))+fl('ipe-ind','Indicaciones',inp('ind','Ej.: rodilla alineada con el pie'))+
+    fl('ipe-reg','¿Registra series?','<select id="ipe-reg" data-ipe="reg"><option'+(E.reg==='Sí'?' selected':'')+'>Sí</option><option value="No"'+(E.reg==='No'?' selected':'')+'>No (calentamiento o movilidad)</option></select>')+'</div>';
+  h+='<div class="actions"><button class="btn primary" data-act="ipeadd"'+(E.saving||!ses||!E.x.trim()?' disabled':'')+'>'+(E.saving?'Guardando…':'Añadir ejercicio')+'</button></div>'+(E.msg?'<div class="toast '+E.msg.k+'" role="status">'+esc(E.msg.t)+'</div>':'');
+  if(list.length)h+='<p class="lblx" style="margin-top:14px">«'+esc(ses)+'» ahora ('+list.length+')</p><div class="scroll"><table><tbody>'+list.map(function(r){return '<tr><td>'+(r.o!=null?r.o:'')+'</td><td class="t mut">'+esc(r.b)+'</td><td class="t"><b>'+esc(r.x)+'</b></td><td>'+(r.se!=null?r.se+' × ':'')+esc(r.re)+'</td><td class="mut">'+(r.reg?'':'sin registro')+'</td></tr>';}).join('')+'</tbody></table></div>';
+  return h+'<p class="mut note">Para dárselo a un jugador, pon el nombre de la sesión en la columna «Programa activo» de la pestaña JUGADORES (varias, separadas por comas).</p></section>';
+}
+document.addEventListener('input',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-ipe');if(!k)return;st.ipe[k]=e.target.value;st.ipe.msg=null;if(k==='ses'||k==='reg'||k==='x'||k==='nueva'){var b=document.querySelector('[data-act="ipeadd"]');if(k==='ses'){var y=window.scrollY;render(true);window.scrollTo(0,y);}else if(b){var E=st.ipe,ses=E.ses==='__nueva'?E.nueva.trim():E.ses;b.disabled=E.saving||!ses||!E.x.trim();}}},true);
+document.addEventListener('change',function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-ipe');if(k==='ses'||k==='reg'){st.ipe[k]=e.target.value;var y=window.scrollY;render(true);window.scrollTo(0,y);}},true);
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('[data-act="ipeadd"]');if(!b)return;e.stopImmediatePropagation();
+  var E=st.ipe,ses=E.ses==='__nueva'?E.nueva.trim():E.ses;if(!ses||!E.x.trim()||E.saving)return;
+  var ord=(st.ip||[]).filter(function(r){return ipSame(r.s,ses);}).reduce(function(m,r){return Math.max(m,r.o||0);},0)+1;
+  var nn=function(v){var x=num(v);return x!=null?x:String(v||'').trim();},row=[ses,ord,E.b.trim(),E.x.trim(),nn(E.se),nn(E.re),E.kg.trim(),'',nn(E.rir),E.desc,E.reg==='No'?'No':'Sí',E.vid.trim(),E.ind.trim()];
+  var y=window.scrollY;E.saving=true;render(true);window.scrollTo(0,y);
+  appendTo('IND_PROG!A1',[row]).then(function(){st.ip.push({s:ses,o:ord,b:row[2],x:row[3],se:num(E.se),re:String(E.re||''),rpe:'',rir:String(E.rir||''),reg:row[10]!=='No'});
+    E.msg={k:'ok',t:'Añadido a «'+ses+'»: '+row[3]+'.'};if(E.ses==='__nueva'){E.ses=ses;E.nueva='';}E.x='';E.se='';E.re='';E.kg='';E.rir='';E.desc='';E.vid='';E.ind='';},
+    function(er){E.msg={k:'err',t:(er&&er.message)||saveError(er,'PROGRAMAS')};}).then(function(){E.saving=false;var yy=window.scrollY;render(true);window.scrollTo(0,yy);});
+},true);
 var ready=window.QPDB.ready();
 ready.then(function(){plBoot();staffBadge();});
 QPDB.onChange=function(){ if(plOn()){plRender();return;} var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){ if(!st._qpDirty){st._qpDirty=true; a.addEventListener('blur',function f(){a.removeEventListener('blur',f); setTimeout(function(){if(st._qpDirty){st._qpDirty=false; load(false);}},50);});} return; } var y=window.scrollY; load(false).then(function(){window.scrollTo(0,y);}); };
