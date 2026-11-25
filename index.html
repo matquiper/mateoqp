@@ -5842,7 +5842,8 @@ function plSession(t){
 function plWfDone(t){return plFlag('wf-'+t)||plRows('DATOS').some(function(r){return cdate(plG(r,'fecha'))===t;});}
 /* RPE de ese día ya registrado, lo haya puesto el jugador o Mateo en campo (por bloque, por serie o final): no se pide otra vez */
 function plRpeDone(t){
-  var R=plRows('CARGA').filter(function(r){return cdate(plG(r,'fecha'))===t&&String(plG(r,'rpe')).trim()!==''&&norm(plG(r,'jugador')).indexOf('todo')!==0&&norm(plG(r,'bloque')).indexOf('individual')!==0;});
+  /* solo cuenta su RPE FINAL (o el del partido): el RPE de cada tarea que pone Mateo en campo no le quita responder el final */
+  var R=plRows('CARGA').filter(function(r){var b=norm(plG(r,'bloque'));return cdate(plG(r,'fecha'))===t&&String(plG(r,'rpe')).trim()!==''&&norm(plG(r,'jugador')).indexOf('todo')!==0&&(b==='sesion completa'||b.indexOf('partido')===0||norm(plG(r,'tipo'))==='partido');});
   if(!R.length)return plFlag('rpe-'+t)?{own:true}:null;
   var app=R.some(function(r){return norm(plG(r,'notas')).indexOf('app jugador')>=0;}), fin=R.filter(function(r){var b=norm(plG(r,'bloque'));return b==='sesion completa'||b.indexOf('partido')===0;})[0];
   return {own:app,rpe:fin?num(plG(fin,'rpe')):null,n:R.length};
@@ -5871,7 +5872,7 @@ function plSubscribe(silent){
 }
 function plPushCard(){
   var s=plPushState(),av=plAviso(),cu=av.modo==='md1'?'el día antes de cada partido':'los días de entreno y el día antes de cada partido';
-  var ar=(QPDB.meta&&QPDB.meta().avisoRpe)||{}, rtx=ar.on?' Y a las '+ar.hora+':'+p2(ar.min==null?30:ar.min)+' de los días que entrenas o juegas, para el RPE final.':'';
+  var ar=(QPDB.meta&&QPDB.meta().avisoRpe)||{}, rtx=ar.on?' Y al acabar cada entreno o partido, para el RPE final.':'';
   if(s==='activar')return '<section class="plc"><h2>🔔 Avisos del wellness y del RPE</h2><p class="sub">Te aviso a las '+av.hora+':00 '+cu+' para el wellness.'+rtx+'</p><button class="plb" data-pl="push" style="margin-top:4px">Activar avisos</button></section>';
   if(s==='instalar')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y código, y toca «Activar avisos».</p></section>';
   if(s==='denegado')return '<section class="plc"><p class="sub" style="margin:0">Avisos bloqueados. Para recibirlos: Ajustes del móvil → Notificaciones → Mateo QP.</p></section>';
@@ -5934,7 +5935,7 @@ function plHoy(){
   h+='<section class="plc"><h2>'+(m?'RPE del partido':'RPE final de la sesión')+'</h2><div class="plseg"><button data-pl="day" data-v="0" aria-pressed="'+(PL.day===0)+'">Hoy</button><button data-pl="day" data-v="1" aria-pressed="'+(PL.day===1)+'">Ayer</button></div>';
   if(m)h+='<p class="sub">Partido vs <b>'+esc(plG(m,'rival')||'rival')+'</b>'+(plG(m,'competicion')?' · '+esc(plG(m,'competicion')):'')+'</p>';
   else h+='<p class="sub">Valora el entrenamiento <b>entero</b>, no solo el último ejercicio. Mejor unos 30 minutos después de acabar.</p>'+(S.plan.length?'<p class="sub" style="margin-top:-4px">'+esc(S.blocks.slice(0,4).join(' · '))+(S.blocks.length>4?'…':'')+' · <b>'+S.mins+' min</b> <span style="color:#62626A">(si la sesión dura más o menos, Mateo pone la duración real)</span></p>':'<p class="sub" style="margin-top:-4px">No hay sesión planificada ese día. Si entrenaste, puedes darlo igual: Mateo pone la duración.</p>');
-  if(done)h+='<div class="plok">✓ '+(done.own?'RPE enviado':'Mateo ya registró tu RPE en el campo')+(done.rpe!=null?' · '+f1(done.rpe):'')+'. ¡Gracias!</div>';
+  if(done)h+='<div class="plok">✓ '+(done.own?'RPE enviado':'Mateo ya registró tu RPE final')+(done.rpe!=null?' · '+f1(done.rpe):'')+'. ¡Gracias!</div>';
   else{
     h+='<div class="plq"><b>'+(m?'¿Cómo de duro ha sido el partido?':'¿Cómo de dura ha sido la sesión?')+'<span>'+(PL.rpe!=null?PL.rpe+' · '+PL_BORG[PL.rpe]:'0 reposo · 10 máximo')+'</span></b><div class="pls r11">';for(var k=0;k<=10;k++)h+='<button data-pl="rpe" data-v="'+k+'" aria-pressed="'+(PL.rpe===k)+'">'+k+'</button>';h+='</div></div>';
     var needMin=!!m;   /* en el entreno la duración no la pone el jugador: la del microciclo, y la corrige la que Mateo registra en la app */

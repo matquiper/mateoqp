@@ -1,5 +1,5 @@
 /* Mateo QP · funciona sin conexión. La app se guarda en el iPad; los datos nunca pasan por esta caché. */
-var V = 'mqp-v8';
+var V = 'mqp-v9';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/maskable-512-v2.png', './icons/apple-touch-icon-v2.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (x) { return x !== V; }).map(function (x) { return caches.delete(x); })); }).then(function () { return self.clients.claim(); })); });
@@ -30,8 +30,9 @@ function leerMeta() {
 }
 self.addEventListener('push', function (e) {
   e.waitUntil(leerMeta().then(function (m) {
-    var d = new Date(), h = d.getHours() + d.getMinutes() / 60, hw = (m.aviso && m.aviso.hora != null) ? +m.aviso.hora : 9, hr = (m.avisoRpe && m.avisoRpe.hora != null) ? +m.avisoRpe.hora + (+(m.avisoRpe.min == null ? 30 : m.avisoRpe.min)) / 60 : 21.5;
-    var rpe = Math.abs(h - hr) < Math.abs(h - hw);
+    /* el del wellness sale por la mañana a su hora; el del RPE, al acabar el entreno o el partido (cada día a una hora) */
+    var d = new Date(), h = d.getHours() + d.getMinutes() / 60, hw = (m.aviso && m.aviso.hora != null) ? +m.aviso.hora : 9;
+    var rpe = h >= hw + 2.5 || h < hw - 4;
     return self.registration.showNotification(rpe ? 'Mateo QP · RPE final' : 'Mateo QP · Wellness',
       { body: rpe ? '¿Cómo de dura ha sido la sesión de hoy? Toca y responde tu RPE final.' : 'Toca para responder el wellness de hoy. Tarda 10 segundos.',
         icon: './icons/icon-192-v2.png', badge: './icons/icon-192-v2.png', tag: rpe ? 'rpe' : 'wellness', renotify: true, data: { url: './' } });
