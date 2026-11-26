@@ -2995,8 +2995,8 @@ function playersGrid(bi,b){
       h+='<div class="pc saved"><div class="pc-h"><span class="pname">'+who+'</span>'+(info.abs[k]?'<span class="pill n">No participó · guardado</span>':'<span class="pill v">✓ RPE '+f1(info.rpe[k])+' guardado</span>')+'</div></div>';
       return;
     }
-    var ab=cAbs(cs,p), au=cAuto(cs,p), cur=num(cs.rpe[p]), miss=!!cs.warn&&!ab&&cur==null, L=cList();
-    h+='<div class="pc'+(L?' prow':'')+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+playerMark(p)+(miss?' <span class="pill a">Sin RPE</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+(!ab&&cur!=null?' '+rpeWord(cur):'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab,L))+'</div>';
+    var ab=cAbs(cs,p), au=cAuto(cs,p), cur=num(cs.rpe[p]), miss=!!cs.warn&&!ab&&cur==null, L=cList(), pdt=!b.final&&Object.keys(lk).length>0&&!ab&&cur==null&&!miss;   /* ya hay RPE guardado en la tarea y a este le falta: pendiente */
+    h+='<div class="pc'+(L?' prow':'')+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+playerMark(p)+(miss?' <span class="pill a">Sin RPE</span>':'')+(pdt?' <span class="pill a">Pendiente</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+(!ab&&cur!=null?' '+rpeWord(cur):'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab,L))+'</div>';
   });
   (st._cout||[]).forEach(function(x){h+=outCard(x);});
   return h;
@@ -3009,14 +3009,15 @@ function blockActions(b,bi){
   /* progreso a la vista en la barra fija: cuántos llevan RPE o «No participó» de los que faltan por guardar */
   var tot=free, hechos=tot-pend.length, prog='<div class="cprog" aria-live="polite">'+hechos+' de '+tot+' '+plural(tot,'jugador','jugadores')+(pend.length?' · faltan '+pend.length:' · todos listos')+'</div>';
   if(cs.warn&&pend.length){
-    return '<div class="warnbox" role="alert"><b>'+pend.length+' '+plural(pend.length,'jugador sin RPE','jugadores sin RPE')+'</b><p>'+esc(pend.map(title).join(', '))+' '+plural(pend.length,'contará','contarán')+' 0 en '+what+'. Pon su RPE o marca «No participó» si no '+plural(pend.length,'jugó','jugaron')+'.</p>'+
-      '<div class="actions"><button class="btn primary lg" data-act="csavego" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>Guardar igual</button><button class="btn lg" data-act="cwarn" data-v="'+bi+'">Volver a revisar</button></div></div>';
+    /* guardar por partes: se guardan solo los que ya tienen RPE; los demás quedan «pendientes» en esta tarea (marcados en el iPad) y se añaden después sin tocar lo guardado */
+    return '<div class="warnbox" role="alert"><b>'+pend.length+' '+plural(pend.length,'jugador aún sin RPE','jugadores aún sin RPE')+'</b><p>'+esc(pend.map(title).join(', '))+'. Si están rotando o llegan después, guarda ya los que tienes: '+plural(pend.length,'quedará','quedarán')+' como <b>pendiente'+(pend.length>1?'s':'')+'</b> en '+what+' y '+plural(pend.length,'le','les')+' añades el RPE luego sin tocar lo guardado. Si no '+plural(pend.length,'jugó','jugaron')+', marca «No participó».</p>'+
+      '<div class="actions"><button class="btn primary lg" data-act="csavego" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>Guardar los que tengo</button><button class="btn lg" data-act="cwarn" data-v="'+bi+'">Seguir marcando</button></div></div>';
   }
   var h='';
   if(late&&!free){
     h+='<p class="mut note">Todos los jugadores tienen su RPE o su «No participó» guardado en '+what+'. Para corregir uno, cámbialo en la pestaña CARGA de tu hoja.</p>';
   } else {
-    var lbl=late?'Añadir RPE que faltan':(b.byS?'Guardar la serie '+k+(serN(b)>1?' de '+serN(b):''):(b.final?'Guardar el RPE final':'Guardar RPE de este bloque'));
+    var lbl=late?'Añadir RPE de los pendientes':(b.byS?'Guardar la serie '+k+(serN(b)>1?' de '+serN(b):''):(b.final?'Guardar el RPE final':'Guardar RPE de este bloque'));
     h+='<div class="actions" style="align-items:center;justify-content:space-between;margin-top:0">'+prog+'<button class="btn primary lg" data-act="csave" data-v="'+bi+'"'+(st.saving?' disabled':'')+'>'+lbl+(pend.length?' ('+pend.length+' sin RPE)':'')+'</button></div>';
     if(late)h+='<p class="mut note">Ya hay RPE guardado en '+what+': aquí solo se añade a quien aún no lo tiene y lo guardado no se duplica. Para corregir un RPE ya guardado, cámbialo en la pestaña CARGA de tu hoja.</p>';
   }
@@ -3067,7 +3068,8 @@ function blockCard(b,bi){
   var open=isOpen(b), cs=cbState(b), late=lateMode(b), info=(late||b.byS)?savedInfo(b):null, k=b.byS?actS(b):null, n=serN(b), sv=b.byS?savedSeries(b):null;
   var planned=minS(b), dph=(late&&info&&info.dur)?info.dur:planned, tipos=b.tipos.join(' · '), cat=b.final?'oth':b.calc[0].cat;
   var nSaved=b.byS?Object.keys(sv).length:0, complete=blockDone(b), cm=(st.cbm||{})[cbk0(b)];
-  var pill=complete?'<span class="pill v">✓ '+(b.byS&&n>1?'Completa':'Registrado')+'</span>':(b.byS&&nSaved?'<span class="pill a">'+nSaved+' de '+n+' series</span>':'');
+  var npend=late?pendingOf(cs,b).length:0;   /* guardada a medias: cuántos quedan pendientes */
+  var pill=(complete?'<span class="pill v">✓ '+(b.byS&&n>1?'Completa':'Registrado')+'</span>':(b.byS&&nSaved?'<span class="pill a">'+nSaved+' de '+n+' series</span>':''))+(npend&&!b.final?' <span class="pill a">'+npend+' '+plural(npend,'pendiente','pendientes')+'</span>':'');
   var name=b.cfin?'RPE al acabar «'+esc(b.base)+'»':(b.final?'RPE final de la sesión':((st._bobj||[]).slice(0,bi+1).filter(function(x){return !x.final;}).length||bi+1)+'. '+esc(b.name));
   var h='<article class="cblock'+(complete?' done':'')+'" id="cblk-'+bi+'"'+(b.final?'':' data-bk="'+esc(b.key)+'"')+'><div class="blk-h"><h2><button type="button" class="cbhead" data-act="copen" data-v="'+bi+'" aria-expanded="'+open+'" aria-controls="cbb-'+bi+'"><span class="chev" aria-hidden="true"></span>'+name+'</button></h2>'+
     (b.final?'':'<span class="tag"><i class="k-'+cat+'"></i>'+esc(tipos)+'</span>')+(b.part?'<span class="tag">'+esc(b.part)+'</span>':'')+(b.obj&&!b.final?'<span class="tag">'+esc(b.obj)+'</span>':'')+pill+'<span class="bacts">'+bexBtn(b,bi)+brenBtn(b,bi)+bdelBtn(b,bi)+'</span></div>'+brenForm(b,bi)+bexForm(b,bi)+bdelConfirm(b,bi);
@@ -3310,9 +3312,10 @@ function saveBlock(bi,force){
       msg=(late?'Añadido a la serie '+k+' de "'+b.name+'": ':'Serie '+k+' de "'+b.name+'" guardada: ')+pl.length+' RPE'+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+(late?'. Lo que ya estaba guardado no se ha duplicado.':'.')+(pendLeft>0?' Quedan '+pendLeft+' '+plural(pendLeft,'jugador','jugadores')+' sin RPE en esta serie: puedes añadirlos ahora.':(doneTask?' Tarea completa.':(nx!=null?' Sigue la serie '+nx+'.':'')));
     } else {
       doneTask=pendLeft===0;
-      msg=b.cfin?'RPE del circuito «'+b.base+'» guardado: '+pl.length+' '+plural(pl.length,'jugador','jugadores')+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+'.':b.final?'RPE final guardado: '+pl.length+' '+plural(pl.length,'jugador','jugadores')+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+'.':((late?'Añadido a "'+b.name+'": ':'"'+b.name+'" guardado: ')+pl.length+' RPE'+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+(late?'. Lo que ya estaba guardado no se ha duplicado.':'.'));
+      msg=b.cfin?'RPE del circuito «'+b.base+'» guardado: '+pl.length+' '+plural(pl.length,'jugador','jugadores')+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+'.':b.final?'RPE final guardado: '+pl.length+' '+plural(pl.length,'jugador','jugadores')+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+'.':((late?'Añadido a "'+b.name+'": ':'"'+b.name+'" guardado: ')+pl.length+' RPE'+(ab.length?' y '+ab.length+' '+plural(ab.length,'ausencia','ausencias'):'')+(late?'. Lo que ya estaba guardado no se ha duplicado.':'.')+(pendLeft>0?' Quedan '+pendLeft+' '+plural(pendLeft,'pendiente','pendientes')+' en esta tarea: añádelos cuando lleguen, lo guardado no se toca.':''));
     }
     cardMsg(b,'ok',msg);
+    if(pendLeft>0&&!b.final)st.ocard[cbk0(b)]=true;   /* quedan pendientes: la tarea sigue abierta en el iPad para añadirlos cuando lleguen */
     if(doneTask){st.ocard[cbk0(b)]=false; var nb=st._bobj[bi+1]; if(nb&&!blockDone(nb)){st.ocard[cbk0(nb)]=true; nextBi=bi+1;}}
   },function(e){
     cardMsg(b,'err',(e&&e.code==='cabeceras')?'Las celdas W1 y X1 de la pestaña CARGA ya tienen otro contenido y el panel necesita esas dos columnas (Parte y Serie nº). Vacíalas y vuelve a guardar.':saveError(e,'CARGA'),permCode(e));
@@ -5730,7 +5733,8 @@ function ptRanking(team,days){
   var add=function(j,v,t,auto){var k=norm(j),o=P[k];if(!o||t<from)return;if(auto)o.auto+=v;else{o.man+=v;if(v<0)o.neg+=v;}};
   st.pts.forEach(function(r){if(r.team===team||!r.team)add(r.j,r.p,r.t,false);});
   var sw={};st.rows.forEach(function(r){var k=norm(r.j)+'|'+r.t;if(r.team!==team||sw[k])return;sw[k]=1;add(r.j,aw,r.t,true);});
-  var sr={};st.carga.forEach(function(r){var k=norm(r.j)+'|'+r.t;if(r.rpe==null||r.abs||twide(r.j)||sr[k])return;sr[k]=1;add(r.j,ar,r.t,true);});
+  /* +1 por RPE respondido: solo el que manda el jugador desde su app, no el que metes tú en campo por tarea */
+  var sr={};st.carga.forEach(function(r){var k=norm(r.j)+'|'+r.t;if(r.rpe==null||r.abs||twide(r.j)||sr[k]||norm(r.n).indexOf('app jugador')<0)return;sr[k]=1;add(r.j,ar,r.t,true);});
   return Object.keys(P).map(function(k){var o=P[k];o.tot=o.man+o.auto;return o;}).sort(function(a,b){return b.tot-a.tot||b.asis-a.asis||esAlpha(a.j,b.j);});
 }
 /* Clasificación estilo liga: 1º y 2º ascienden directos; 3º-6º juegan el play-off y lo gana (3ª plaza de ascenso) quien más entrenamientos ha hecho;
@@ -5948,7 +5952,12 @@ function plBoot(){
   var s=document.createElement('style');s.textContent=PL_CSS;document.head.appendChild(s);
   document.body.classList.add('pl-mode');
   var root=document.createElement('div');root.id='pl';document.body.appendChild(root);
-  root.addEventListener('click',plClick);plRender();
+  root.addEventListener('click',plClick);
+  /* minutos exactos del partido: se apuntan sin repintar (para no perder el teclado) */
+  root.addEventListener('input',function(e){var t=e.target;if(!t.hasAttribute||!t.hasAttribute('data-plmin'))return;var n=Math.round(+t.value);PL.min=n>0&&n<=130?n:null;
+    [].forEach.call(root.querySelectorAll('[data-pl="min"]'),function(b){b.setAttribute('aria-pressed','false');});t.style.borderColor=PL.min?'#0B0B0C':'#D4D4DA';t.style.background=PL.min?'#0B0B0C':'#fff';t.style.color=PL.min?'#fff':'#0B0B0C';
+    var sb=root.querySelector('[data-pl="rpesave"]');if(sb)sb.disabled=!(PL.rpe!=null&&PL.min!=null&&!PL.busy);});
+  plRender();
   if(plPushState()==='ok')setTimeout(function(){plSubscribe(true);},3000);   /* si el móvil cambió el aviso, se vuelve a apuntar solo */
 }
 function plHead(){
@@ -5978,8 +5987,11 @@ function plHoy(){
   else{
     h+='<div class="plq"><b>'+(m?'¿Cómo de duro ha sido el partido?':'¿Cómo de dura ha sido la sesión?')+'<span>'+(PL.rpe!=null?PL.rpe+' · '+PL_BORG[PL.rpe]:'0 reposo · 10 máximo')+'</span></b><div class="pls r11">';for(var k=0;k<=10;k++)h+='<button data-pl="rpe" data-v="'+k+'" aria-pressed="'+(PL.rpe===k)+'">'+k+'</button>';h+='</div></div>';
     var needMin=!!m;   /* en el entreno la duración no la pone el jugador: la del microciclo, y la corrige la que Mateo registra en la app */
-    if(needMin){var opts=[90,80,70,60,45,30,15];h+='<div class="plq"><b>Minutos jugados</b><div class="plchips">'+opts.map(function(x){return '<button data-pl="min" data-v="'+x+'" aria-pressed="'+(PL.min===x)+'">'+x+'\'</button>';}).join('')+'</div></div>';}
-    h+='<button class="plb" data-pl="rpesave"'+(PL.rpe!=null&&(!needMin||PL.min)&&!PL.busy?'':' disabled')+'>'+(m?'Enviar RPE del partido':'Enviar RPE final')+'</button>';
+    if(needMin){var opts=[90,80,70,60,45,30,15],own=PL.min!=null&&PL.min>0&&opts.indexOf(PL.min)<0;
+      h+='<div class="plq"><b>Minutos que has jugado<span>'+(PL.min==null?'toca o escribe':PL.min===0?'no jugaste':PL.min+' min')+'</span></b><div class="plchips">'+opts.map(function(x){return '<button data-pl="min" data-v="'+x+'" aria-pressed="'+(PL.min===x)+'">'+x+'\'</button>';}).join('')+
+        '<input data-plmin type="number" inputmode="numeric" min="1" max="130" step="1" placeholder="Otro" aria-label="Minutos exactos" value="'+(own?PL.min:'')+'" style="width:84px;min-height:44px;border-radius:22px;border:1px solid '+(own?'#0B0B0C':'#D4D4DA')+';background:'+(own?'#0B0B0C':'#fff')+';color:'+(own?'#fff':'#0B0B0C')+';padding:0 12px;font-weight:600;font-size:15px">'+
+        '<button data-pl="min" data-v="0" aria-pressed="'+(PL.min===0)+'">No jugué</button></div></div>';}
+    h+='<button class="plb" data-pl="rpesave"'+(PL.rpe!=null&&(!needMin||PL.min!=null)&&!PL.busy?'':' disabled')+'>'+(m?'Enviar RPE del partido':'Enviar RPE final')+'</button>';
   }
   h+=(PL.msg?'<div class="plmsg '+(PL.msg.k||'')+'">'+esc(PL.msg.t)+'</div>':'')+'</section>';
   return h;
