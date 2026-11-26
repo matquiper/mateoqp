@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="es"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <title>Mateo QP</title><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mateo QP"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0B0B0C"><link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-v2.png"><link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192-v2.png"></head><body>
 <div id="mqsplash" role="status" aria-live="polite" aria-label="Cargando Mateo QP">
 <style>
@@ -31,7 +31,7 @@
 #mqsplash .mqs-row .mqs-pct{font-variant-numeric:tabular-nums;color:#fff}
 #mqsplash .mqs-go{position:absolute;left:0;right:0;top:50%;text-align:center;font-size:54px;font-weight:900;font-style:italic;color:#fff;text-shadow:0 4px 0 #C8102E;opacity:0;transform:scale(.6);transition:opacity .2s,transform .25s cubic-bezier(.3,1.6,.5,1)}
 #mqsplash.mqs-ready .mqs-go{opacity:1;transform:scale(1)}#mqsplash.mqs-ready .mqs-stage,#mqsplash.mqs-ready .mqs-ttl,#mqsplash.mqs-ready .mqs-hud{opacity:.15;transition:opacity .2s}
-#mqsplash .mqs-skip{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45)}
+#mqsplash .mqs-skip{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.72)}
 @media (prefers-reduced-motion:reduce){#mqsplash *{animation-duration:.01s!important;animation-iteration-count:1!important}}
 </style>
 <svg class="mqs-pitch" viewBox="0 0 400 260" aria-hidden="true"><rect class="mqs-p1" x="10" y="10" width="380" height="240" rx="2"/><line class="mqs-p2" x1="200" y1="10" x2="200" y2="250"/><circle class="mqs-p2" cx="200" cy="130" r="36"/><rect class="mqs-p3" x="10" y="70" width="52" height="120"/><rect class="mqs-p3" x="338" y="70" width="52" height="120"/></svg>
@@ -49,7 +49,7 @@
   var k,a,seams='',outs='';
   for(k=0;k<5;k++){a=(-90+72*k)*Math.PI/180;seams+='<line x1="'+(15*Math.cos(a)).toFixed(1)+'" y1="'+(15*Math.sin(a)).toFixed(1)+'" x2="'+(31*Math.cos(a)).toFixed(1)+'" y2="'+(31*Math.sin(a)).toFixed(1)+'"/>';outs+='<polygon points="'+pent(48*Math.cos(a),48*Math.sin(a),17,90+72*k)+'"/>';}
   document.getElementById('mqs-ball').innerHTML='<svg viewBox="-50 -50 100 100"><circle r="50" fill="#0B0B0C"/><circle r="45" fill="#fff"/><clipPath id="mqsc"><circle r="45"/></clipPath><g clip-path="url(#mqsc)" fill="#0B0B0C" stroke="#0B0B0C" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"><polygon points="'+pent(0,0,15,-90)+'"/>'+seams+outs+'</g></svg>';
-  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, T=reduce?900:3200, t0=Date.now(), done=false;
+  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, T=(/^#(rpe|wellness)$/.test(location.hash)||reduce)?900:3200, t0=Date.now(), done=false;
   var tips=['Inflando balones…','Marcando el campo…','Atando las botas…','Calentando motores…','Saliendo al terreno de juego…'];
   var bar=document.getElementById('mqs-bar'), pct=document.getElementById('mqs-pct'), tip=document.getElementById('mqs-tip');
   function end(){if(done)return;done=true;el.classList.add('mqs-ready');setTimeout(function(){el.classList.add('mqs-out');setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},380);},reduce?120:420);}
@@ -2941,10 +2941,10 @@ function lockedOf(b){
   return m;
 }
 /* RPE 0-10 (escala CR-10, la misma que en el móvil del jugador). En modo lista, los 11 números en una fila */
-function rpe6(bi,pi,cur,off,lista){
-  var h='<div class="rpe6'+(lista?' r11':'')+'" role="group" aria-label="RPE">';
+function rpe6(bi,pi,cur,off,lista,quien){
+  var h='<div class="rpe6'+(lista?' r11':'')+'" role="group" aria-label="RPE'+(quien?' de '+esc(quien):'')+'">';
   for(var i=0;i<=10;i++)h+='<button type="button" data-act="crpe" data-v="'+bi+'.'+pi+'.'+i+'" aria-pressed="'+(cur===i)+'" aria-label="RPE '+i+', '+RPEW[i].toLowerCase()+'"'+(off?' disabled':'')+'>'+i+'</button>';
-  return h+'<button type="button" class="clr" data-act="crpe" data-v="'+bi+'.'+pi+'.x" aria-label="Borrar el RPE"'+(off?' disabled':'')+'>×</button></div>';
+  return h+'<button type="button" class="clr" data-act="crpe" data-v="'+bi+'.'+pi+'.x" aria-label="Borrar el RPE'+(quien?' de '+esc(quien):'')+'"'+(off?' disabled':'')+'>×</button></div>';
 }
 function rpeWord(v){return v==null?'':'<span class="rpew">'+f1(v)+' · '+esc(RPEW[Math.round(v)]||'')+'</span>';}
 /* tarjetas o lista: se recuerda en este dispositivo */
@@ -2996,7 +2996,7 @@ function playersGrid(bi,b){
       return;
     }
     var ab=cAbs(cs,p), au=cAuto(cs,p), cur=num(cs.rpe[p]), miss=!!cs.warn&&!ab&&cur==null, L=cList(), pdt=!b.final&&Object.keys(lk).length>0&&!ab&&cur==null&&!miss;   /* ya hay RPE guardado en la tarea y a este le falta: pendiente */
-    h+='<div class="pc'+(L?' prow':'')+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+playerMark(p)+(miss?' <span class="pill a">Sin RPE</span>':'')+(pdt?' <span class="pill a">Pendiente</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+(!ab&&cur!=null?' '+rpeWord(cur):'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab,L))+'</div>';
+    h+='<div class="pc'+(L?' prow':'')+(ab?' off':'')+(miss?' miss':'')+'"><div class="pc-h"><span class="pname">'+who+playerMark(p)+(miss?' <span class="pill a">Sin RPE</span>':'')+(pdt?' <span class="pill a">Pendiente</span>':'')+(au?' <span class="pill n">No participó en otra tarea</span>':'')+(!ab&&cur!=null?' '+rpeWord(cur):'')+'</span><button type="button" class="chip" data-act="cabs" data-v="'+bi+'.'+pi+'" aria-pressed="'+ab+'" aria-label="No participó: '+esc(title(p))+'">No participó</button></div>'+(au?'<button type="button" class="linkbtn" data-act="absback" data-v="'+esc(p)+'" aria-label="Meter a '+esc(title(p))+' en la sesión (llegó tarde u otro motivo)">Meter en la sesión (llegó tarde u otro motivo)</button>':rpe6(bi,pi,cur,ab,L,title(p)))+'</div>';
   });
   (st._cout||[]).forEach(function(x){h+=outCard(x);});
   return h;
@@ -5501,24 +5501,24 @@ function acOut(g){var t=cdate(st.cp.fecha);return acAll(g).filter(acIsOut).map(f
 /* «No participó» del bloque por grupos: lo marcado a mano manda; si no, se arrastra el «No participó» guardado hoy en otra tarea */
 function acAbs(x,p){return x&&Object.prototype.hasOwnProperty.call(x,'abs')?!!x.abs:!!(st._dabs&&st._dabs[norm(p)]);}
 function acMoveSel(g,p){var k=norm(p), gm=acBaseMap(), mv=acMove(), a=st.ac[acKey()], base=gm[k], cur=mv[k]||base, bn=(a.groups.filter(function(x){return x.k===base;})[0]||{}).n;
-  return '<label class="mut" style="display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 6px">Hoy en <select data-acf="move" data-acp="'+esc(p)+'" style="min-height:36px">'+a.groups.map(function(x){return '<option value="'+esc(x.k)+'"'+(x.k===cur?' selected':'')+'>'+esc(x.n)+(x.k===base?' (su posición)':'')+'</option>';}).join('')+'</select>'+(mv[k]&&mv[k]!==base?' <span class="pill a">Cambiado hoy'+(bn?' · suele ir en '+esc(bn):'')+'</span>':'')+'</label>';}
+  return '<label class="mut" style="display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 6px">Hoy en <select data-acf="move" data-acp="'+esc(p)+'" aria-label="Posición de hoy de '+esc(title(p))+'" style="min-height:44px">'+a.groups.map(function(x){return '<option value="'+esc(x.k)+'"'+(x.k===cur?' selected':'')+'>'+esc(x.n)+(x.k===base?' (su posición)':'')+'</option>';}).join('')+'</select>'+(mv[k]&&mv[k]!==base?' <span class="pill a">Cambiado hoy'+(bn?' · suele ir en '+esc(bn):'')+'</span>':'')+'</label>';}
 function acDist(r,g){if(!r||g.kind==='keeper')return null;var pct=num(g.pct),tw=g.kind==='rsa'?6:30,L=num(g.dist),loss=num(g.turn);if(pct==null)pct=90;if(L==null)L=40;if(loss==null)loss=0.7;return Math.round(pxDist(r.val,pct,tw,L,loss).d);}
-function acRpe(g,pi,p){var a=g.players[p]||{},v=num(a.rpe),dur=num(g.real);if(dur==null)dur=num(g.dur);var sr=v!=null&&dur!=null?v*dur:null;return '<div class="rpe6" role="group" aria-label="RPE del bloque">'+Array.from({length:11},function(_,i){return '<button type="button" data-ac="rpe" data-acv="'+g.k+'|'+pi+'|'+p+'|'+i+'" aria-pressed="'+(v===i)+'">'+i+'</button>';}).join('')+'</div><span class="mut" data-ac-srpe="'+g.k+'|'+esc(p)+'">sRPE: '+(sr==null?'–':f1(sr)+' UA')+'</span>';}
+function acRpe(g,pi,p){var a=g.players[p]||{},v=num(a.rpe),dur=num(g.real);if(dur==null)dur=num(g.dur);var sr=v!=null&&dur!=null?v*dur:null;return '<div class="rpe6" role="group" aria-label="RPE del bloque de '+esc(title(p))+'">'+Array.from({length:11},function(_,i){return '<button type="button" data-ac="rpe" data-acv="'+g.k+'|'+pi+'|'+p+'|'+i+'" aria-pressed="'+(v===i)+'" aria-label="RPE '+i+', '+RPEW[i].toLowerCase()+'">'+i+'</button>';}).join('')+'</div><span class="mut" data-ac-srpe="'+g.k+'|'+esc(p)+'">sRPE: '+(sr==null?'–':f1(sr)+' UA')+'</span>';}
 function acPlayer(g,p,pi,V){
   var a=g.players[p]||(g.players[p]={}), info=V[norm(p)], dist=acDist(info,g), absent=acAbs(a,p), auto=absent&&!Object.prototype.hasOwnProperty.call(a,'abs'), body='',i,ca=null,target=g.kind==='rsa'?Math.max(1,+g.series||2):1;
   if(g.kind==='rsa'){
-    body='<div class="form">';for(i=1;i<=target;i++)body+='<div class="fld"><label>Serie '+i+' · primer sprint (s)</label><input type="number" inputmode="decimal" step="0.01" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="s'+i+'a" value="'+esc(a['s'+i+'a']||'')+'"></div><div class="fld"><label>Serie '+i+' · último sprint (s)</label><input type="number" inputmode="decimal" step="0.01" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="s'+i+'b" value="'+esc(a['s'+i+'b']||'')+'"></div>';body+='</div>';
+    body='<div class="form">';for(i=1;i<=target;i++)body+='<div class="fld"><label>Serie '+i+' · primer sprint (s)</label><input type="number" inputmode="decimal" step="0.01" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="s'+i+'a" aria-label="'+esc(title(p))+': serie '+i+', primer sprint en segundos" value="'+esc(a['s'+i+'a']||'')+'"></div><div class="fld"><label>Serie '+i+' · último sprint (s)</label><input type="number" inputmode="decimal" step="0.01" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="s'+i+'b" aria-label="'+esc(title(p))+': serie '+i+', último sprint en segundos" value="'+esc(a['s'+i+'b']||'')+'"></div>';body+='</div>';
   }
   if(g.kind==='3030'||g.kind==='central'){
     var planned=(+g.series||1)*(+g.target||6);
-    body+='<div class="fld"><label>30"-30" · repeticiones (de '+planned+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|reps|-1">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="reps" value="'+esc(a.reps==null?'':a.reps)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|reps|1">+</button></div><label>No llegó al cono</label><input type="number" inputmode="numeric" min="0" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="cone" value="'+esc(a.cone||'0')+'"></div>';
+    body+='<div class="fld"><label>30"-30" · repeticiones (de '+planned+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|reps|-1" aria-label="Quitar uno">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="reps" aria-label="'+esc(title(p))+': repeticiones" value="'+esc(a.reps==null?'':a.reps)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|reps|1" aria-label="Añadir uno">+</button></div><label>No llegó al cono</label><input type="number" inputmode="numeric" min="0" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="cone" aria-label="'+esc(title(p))+': veces que no llegó al cono" value="'+esc(a.cone||'0')+'"></div>';
   }
-  if(g.kind==='planCentral')body+='<div class="fld"><label>Frenadas completadas (de '+(g.brakeTarget||6)+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+(g.brakeTarget||6)+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1">+</button></div></div>';
-  if(g.kind==='central')body+='<div class="fld"><label>Frenadas completadas (de '+(g.brakeTarget||6)+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+(g.brakeTarget||6)+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1">+</button></div></div><div class="fld"><label>Suicidas completados (de 6)</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|suic|-1">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="6" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="suic" value="'+esc(a.suic==null?'':a.suic)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|suic|1">+</button></div></div>';
-  if(g.kind==='brake')body+='<div class="fld"><label>Frenadas completadas (de '+g.target+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+g.target+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1">+</button></div></div>';
+  if(g.kind==='planCentral')body+='<div class="fld"><label>Frenadas completadas (de '+(g.brakeTarget||6)+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1" aria-label="Quitar uno">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+(g.brakeTarget||6)+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" aria-label="'+esc(title(p))+': frenadas completadas" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1" aria-label="Añadir uno">+</button></div></div>';
+  if(g.kind==='central')body+='<div class="fld"><label>Frenadas completadas (de '+(g.brakeTarget||6)+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1" aria-label="Quitar uno">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+(g.brakeTarget||6)+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" aria-label="'+esc(title(p))+': frenadas completadas" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1" aria-label="Añadir uno">+</button></div></div><div class="fld"><label>Suicidas completados (de 6)</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|suic|-1" aria-label="Quitar uno">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="6" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="suic" aria-label="'+esc(title(p))+': suicidas completados" value="'+esc(a.suic==null?'':a.suic)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|suic|1" aria-label="Añadir uno">+</button></div></div>';
+  if(g.kind==='brake')body+='<div class="fld"><label>Frenadas completadas (de '+g.target+')</label><div class="stepper" style="display:flex;gap:6px;align-items:center"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|-1" aria-label="Quitar uno">−</button><input style="max-width:82px" type="number" inputmode="numeric" min="0" max="'+g.target+'" step="1" data-acf="metric" data-acg="'+g.k+'" data-acp="'+esc(p)+'" data-ack="brake" aria-label="'+esc(title(p))+': frenadas completadas" value="'+esc(a.brake==null?'':a.brake)+'"><button type="button" class="step2" data-ac="step" data-acv="'+g.k+'|'+esc(p)+'|brake|1" aria-label="Añadir uno">+</button></div></div>';
   if(g.kind==='rsa')for(i=1;i<=target;i++){var x=num(a['s'+i+'a']),y=num(a['s'+i+'b']);if(x>0&&y>0){var q=(y-x)/x*100;if(ca==null||q>ca)ca=q;}}
   var targetDist=info?(g.fixedDist!=null?g.fixedDist:dist):null, distText=targetDist!=null?targetDist+' m'+(g.fixedDist!=null&&dist!=null?' · VIFT: '+dist+' m':''):'';
-  return '<div class="pc ac-player'+(absent?' off':'')+'"><div class="pc-h"><b class="pname">'+esc(title(p))+playerMark(p)+'</b><span class="mut">'+(g.kind==='keeper'?'Portero · sin distancia · solo RPE':info?f1(info.val)+' km/h · '+fs(info.t):'sin 30-15')+(distText?' · '+distText:'')+'</span><button type="button" class="chip" data-ac="abs" data-acv="'+g.k+'|'+esc(p)+'" aria-pressed="'+absent+'">No participó</button></div>'+acMoveSel(g,p)+(auto?'<p class="mut note" style="margin:0"><span class="pill n">No participó en otra tarea</span> <button type="button" class="linkbtn" style="display:inline;min-height:32px" data-act="absback" data-v="'+esc(p)+'">Meter en la sesión</button></p>':'')+(absent?'':body+acRpe(g,pi,p)+(g.kind==='rsa'?'<div class="caid">Caída mayor: '+(ca==null?'–':'<span class="pill '+(ca>15?'r':ca>10?'a':'v')+'">'+f1(ca)+' %</span>')+'</div>':''))+'</div>';
+  return '<div class="pc ac-player'+(absent?' off':'')+'"><div class="pc-h"><b class="pname">'+esc(title(p))+playerMark(p)+'</b><span class="mut">'+(g.kind==='keeper'?'Portero · sin distancia · solo RPE':info?f1(info.val)+' km/h · '+fs(info.t):'sin 30-15')+(distText?' · '+distText:'')+'</span><button type="button" class="chip" data-ac="abs" data-acv="'+g.k+'|'+esc(p)+'" aria-pressed="'+absent+'" aria-label="No participó: '+esc(title(p))+'">No participó</button></div>'+acMoveSel(g,p)+(auto?'<p class="mut note" style="margin:0"><span class="pill n">No participó en otra tarea</span> <button type="button" class="linkbtn" style="display:inline-block;min-height:44px" data-act="absback" data-v="'+esc(p)+'" aria-label="Meter a '+esc(title(p))+' en la sesión">Meter en la sesión</button></p>':'')+(absent?'':body+acRpe(g,pi,p)+(g.kind==='rsa'?'<div class="caid">Caída mayor: '+(ca==null?'–':'<span class="pill '+(ca>15?'r':ca>10?'a':'v')+'">'+f1(ca)+' %</span>')+'</div>':''))+'</div>';
 }
 function acGroupCard(g,V){var members=acMembers(g), outs=acOut(g), capture=members.some(function(p){var x=g.players[p]||{};return acAbs(x,p)||num(x.rpe)!=null;}), open=g.open!==false, h='<details class="block ac-group"'+(open?' open':'')+'><summary class="sect"><h2>'+esc(g.n)+'</h2><span>'+members.length+' '+plural(members.length,'jugador','jugadores')+(outs.length?' · '+outs.length+' '+plural(outs.length,'lesionado o ausente','lesionados o ausentes'):'')+'</span></summary><div class="form ac-config">'+fld('ac-task-'+g.k,'Tarea','<input id="ac-task-'+g.k+'" data-acf="cfg" data-acg="'+g.k+'" data-ack="task" value="'+esc(g.task)+'">')+fld('ac-fmt-'+g.k,'Formato','<input id="ac-fmt-'+g.k+'" data-acf="cfg" data-acg="'+g.k+'" data-ack="fmt" value="'+esc(g.fmt)+'">')+fld('ac-pct-'+g.k,'% VIFT','<input id="ac-pct-'+g.k+'" type="number" inputmode="decimal" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="pct" value="'+esc(g.pct)+'">')+fld('ac-dist-'+g.k,'Recorrido (m)','<input id="ac-dist-'+g.k+'" type="number" inputmode="decimal" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="dist" value="'+esc(g.dist)+'">')+fld('ac-dur-'+g.k,'Duración planificada (min)','<input id="ac-dur-'+g.k+'" type="number" inputmode="decimal" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="dur" value="'+esc(g.dur)+'">')+fld('ac-turn-'+g.k,'Tiempo de giro (s)','<input id="ac-turn-'+g.k+'" type="number" inputmode="decimal" min="0" step="0.1" data-acf="cfg" data-acg="'+g.k+'" data-ack="turn" value="'+esc(g.turn)+'">')+'</div>';
   h+='<div class="form ac-config">'+fld('ac-series-'+g.k,'Series previstas','<input id="ac-series-'+g.k+'" type="number" inputmode="numeric" min="1" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="series" value="'+esc(g.series||1)+'">')+fld('ac-target-'+g.k,g.kind==='brake'?'Frenadas previstas':'Repeticiones por serie','<input id="ac-target-'+g.k+'" type="number" inputmode="numeric" min="1" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="target" value="'+esc(g.target||6)+'">')+(g.kind==='rsa'?fld('ac-recovery-'+g.k,'Recuperación (s)','<input id="ac-recovery-'+g.k+'" type="number" inputmode="decimal" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="recovery" value="'+esc(g.recovery==null?20:g.recovery)+'">'):'')+(g.kind==='central'?fld('ac-brake-target-'+g.k,'Frenadas previstas','<input id="ac-brake-target-'+g.k+'" type="number" inputmode="numeric" min="1" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="brakeTarget" value="'+esc(g.brakeTarget||6)+'">'):'')+(g.kind==='central'?fld('ac-brake-dist-'+g.k,'Distancia de frenada (m)','<input id="ac-brake-dist-'+g.k+'" data-acf="cfg" data-acg="'+g.k+'" data-ack="brakeDist" value="'+esc(g.brakeDist||'5-10')+'">'):'')+(g.fixedDist!=null?fld('ac-fixed-'+g.k,'Distancia fija objetivo (m)','<input id="ac-fixed-'+g.k+'" type="number" inputmode="decimal" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="fixedDist" value="'+esc(g.fixedDist)+'">'):'')+(g.turns!=null?fld('ac-turns-'+g.k,'Giros previstos','<input id="ac-turns-'+g.k+'" type="number" inputmode="numeric" min="0" step="1" data-acf="cfg" data-acg="'+g.k+'" data-ack="turns" value="'+esc(g.turns)+'">'):'')+(g.restBetween!=null?fld('ac-rest-'+g.k,'Descanso entre series (min)','<input id="ac-rest-'+g.k+'" type="number" inputmode="decimal" min="0" step="0.5" data-acf="cfg" data-acg="'+g.k+'" data-ack="restBetween" value="'+esc(g.restBetween)+'">'):'')+'</div>';
@@ -5906,60 +5906,88 @@ function plPushState(){
 }
 function plB64u(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
 function plSubscribe(silent){
-  var key=QPDB.meta().vapid; if(!key){if(!silent){PL.msg={t:'Necesita conexión: abre la app con internet y vuelve a tocar.'};plRender();}return;}
+  var key=QPDB.meta().vapid; if(!key){if(!silent){PL.msg={at:'push',t:'Necesita conexión: abre la app con internet y vuelve a tocar.'};plRender();}return;}
   var ask=silent?Promise.resolve(Notification.permission):Notification.requestPermission();
   return Promise.resolve(ask).then(function(p){if(p!=='granted')throw new Error('Sin permiso para avisos. Actívalo en Ajustes del móvil → Notificaciones → Mateo QP.');return navigator.serviceWorker.ready;})
   .then(function(reg){return reg.pushManager.getSubscription().then(function(s){return s||reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:plB64u(key)});});})
-  .then(function(s){if(!silent||plFlag('push-ep')!==s.endpoint){QPDB.subPush(JSON.parse(JSON.stringify(s)));plFlag('push-ep',s.endpoint);}plFlag('push','1');if(!silent){PL.msg={k:'ok',t:'Avisos activados ✓ Te llegará el wellness por la mañana.'};plRender();}})
-  .catch(function(e){if(!silent){PL.msg={t:(e&&e.message)||'No se pudieron activar los avisos'};plRender();}});
+  .then(function(s){if(!silent||plFlag('push-ep')!==s.endpoint){QPDB.subPush(JSON.parse(JSON.stringify(s)));plFlag('push-ep',s.endpoint);}plFlag('push','1');if(!silent){PL.msg={at:'push',k:'ok',t:'Avisos activados ✓ Te llegará el wellness por la mañana.'};plRender();}})
+  .catch(function(e){if(!silent){PL.msg={at:'push',t:(e&&e.message)||'No se pudieron activar los avisos'};plRender();}});
 }
+/* emoji decorativo: el lector de pantalla no lo lee */
+function plIc(x){return '<span aria-hidden="true">'+x+'</span> ';}
+/* mensaje del sitio «at» (push, wf, rpe): sale justo debajo de lo que se ha tocado y se lee en voz alta (role) */
+function plMsg(at){var m=PL.msg;if(!m||(m.at||'rpe')!==at)return '';return '<div class="plmsg '+(m.k||'')+'" id="pl-msg" tabindex="-1">'+esc(m.t)+'</div>';}
+function plIos(){return /iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
 function plPushCard(){
   var s=plPushState(),av=plAviso(),cu=av.modo==='md1'?'el día antes de cada partido':'los días de entreno y el día antes de cada partido';
   var ar=(QPDB.meta&&QPDB.meta().avisoRpe)||{}, rtx=ar.on?' Y al acabar cada entreno o partido, para el RPE final.':'';
-  if(s==='activar')return '<section class="plc"><h2>🔔 Avisos del wellness y del RPE</h2><p class="sub">Te aviso a las '+av.hora+':00 '+cu+' para el wellness.'+rtx+'</p><button class="plb" data-pl="push" style="margin-top:4px">Activar avisos</button></section>';
-  if(s==='instalar')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y código, y toca «Activar avisos».</p></section>';
-  if(s==='denegado')return '<section class="plc"><p class="sub" style="margin:0">Avisos bloqueados. Para recibirlos: Ajustes del móvil → Notificaciones → Mateo QP.</p></section>';
-  if(s==='ok')return '<section class="plc" style="padding:12px 16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="color:#1F6B43;font-weight:600">🔔 Avisos activados ✓</span><button data-pl="push" style="background:none;border:0;color:#55555D;font-size:13px;text-decoration:underline;min-height:36px">¿No te llegan? Toca aquí</button></div></section>';
-  if(s==='no')return '<section class="plc"><h2>🔔 Recibe el aviso del wellness</h2><p class="sub" style="margin:0">Desde aquí no se pueden activar los avisos. Abre la app en <b>Chrome</b> (Android) o desde el <b>icono de la pantalla de inicio</b> (iPhone), no desde WhatsApp ni Instagram.</p></section>';
+  if(s==='activar')return '<section class="plc"><h2 style="justify-content:flex-start">'+plIc('🔔')+'Avisos del wellness y del RPE</h2><p class="sub">Te aviso a las '+av.hora+':00 '+cu+' para el wellness.'+rtx+'</p><button class="plb" data-pl="push" style="margin-top:4px">Activar avisos</button>'+plMsg('push')+'</section>';
+  if(s==='instalar')return '<section class="plc"><h2 style="justify-content:flex-start">'+plIc('🔔')+'Recibe el aviso del wellness</h2><p class="sub">En Safari toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba) → <b>Añadir a pantalla de inicio</b>. Entra desde ese icono con tu nombre y código, y toca «Activar avisos».</p></section>';
+  if(s==='denegado')return '<section class="plc"><h2 style="justify-content:flex-start">'+plIc('🔕')+'Avisos bloqueados</h2><p class="sub" style="margin:0">'+(plIos()?'Para recibirlos: <b>Ajustes</b> del iPhone → <b>Notificaciones</b> → <b>Mateo QP</b> → activa «Permitir notificaciones».':'Para recibirlos: en Chrome toca el candado junto a la dirección → <b>Permisos</b> → <b>Notificaciones</b> → Permitir. Luego vuelve aquí.')+'</p>'+plMsg('push')+'</section>';
+  if(s==='ok')return '<section class="plc" style="padding:12px 16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span style="color:#1F6B43;font-weight:600">'+plIc('🔔')+'Avisos activados ✓</span><button data-pl="push" class="plink">Volver a activar los avisos</button></div><p class="sub" style="margin:4px 0 0;font-size:.8125rem">Si no te llegan, toca «Volver a activar los avisos».</p>'+plMsg('push')+'</section>';
+  if(s==='no')return '<section class="plc"><h2 style="justify-content:flex-start">'+plIc('🔔')+'Recibe el aviso del wellness</h2><p class="sub" style="margin:0">Desde aquí no se pueden activar los avisos. Abre la app en <b>Chrome</b> (Android) o desde el <b>icono de la pantalla de inicio</b> (iPhone), no desde WhatsApp ni Instagram.</p></section>';
   return '';
 }
-var PL_CSS='body.pl-mode{display:block;background:#F3F3F5;color:#0B0B0C}body.pl-mode .side,body.pl-mode .top,body.pl-mode .sheet{display:none!important}'+
- '#pl{max-width:640px;margin:0 auto;padding:0 0 calc(92px + env(safe-area-inset-bottom))}'+
+/* tamaños en rem: en iPhone siguen el «Tamaño del texto» del móvil (html.pl-html usa -apple-system-body); los números de las escalas con tope para que quepan */
+var PL_CSS='html.pl-html{font:-apple-system-body}body.pl-mode{display:block;background:#F3F3F5;color:#0B0B0C;font-size:.875rem}body.pl-mode .side,body.pl-mode .top,body.pl-mode .sheet{display:none!important}'+
+ '.pl-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}'+
+ '#pl{max-width:640px;margin:0 auto;padding:0 0 calc(92px + env(safe-area-inset-bottom))}#pl :focus-visible{outline:3px solid #0B57D0;outline-offset:2px}'+
  '.plh{background:radial-gradient(420px 220px at 100% 0,rgba(229,35,58,.55),transparent 70%),#0B0B0C;color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;border-radius:0 0 26px 26px;box-shadow:inset 0 -3px 0 #C8102E}'+
- '.plh .k{font:600 12px "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#C4C4CB;display:flex;justify-content:space-between;align-items:center}'+
- '.plh h1{font:800 italic 30px/1.05 "Saira",sans-serif;margin:8px 0 2px}.plh p{margin:0;color:#D8D8DE;font-size:14px}.plh img{height:34px}'+
- '.plh .out{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;min-height:36px;padding:0 10px;font-size:13px}'+
- '.plc{background:#fff;border-radius:20px;margin:14px 14px 0;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 12px 28px -18px rgba(0,0,0,.35)}'+
- '.plc h2{font:700 20px "Saira",sans-serif;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px}.plc .sub{color:#55555D;font-size:14px;margin:0 0 10px}'+
- '.plq{margin:14px 0 0}.plq b{font:700 16px "Saira",sans-serif;display:flex;justify-content:space-between}.plq b span{font:400 12px "IBM Plex Sans",sans-serif;color:#62626A}'+
- '.pls{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}.pls.r11{grid-template-columns:repeat(6,1fr)}'+
- '.pls button{min-height:52px;border-radius:12px;border:1px solid #D4D4DA;background:#fff;font:700 20px "Saira",sans-serif;color:#0B0B0C}'+
- '.pls button[aria-pressed="true"]{background:#C8102E;color:#fff;border-color:transparent}'+
- '.plb{width:100%;min-height:58px;border:0;border-radius:16px;background:#C8102E;color:#fff;font:700 18px "Saira",sans-serif;margin-top:16px}.plb:disabled{opacity:.45}'+
+ '.plh .k{font:600 .75rem "Saira",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#C4C4CB;display:flex;justify-content:space-between;align-items:center}'+
+ '.plh h1{font:800 italic min(1.875rem,44px)/1.05 "Saira",sans-serif;margin:8px 0 2px}.plh p{margin:0;color:#D8D8DE;font-size:.875rem}.plh img{height:34px}'+
+ '.plh .out{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:10px;min-height:44px;padding:0 10px;font-size:.8125rem}'+
+ '.plc{background:#fff;border-radius:20px;margin:14px 14px 0;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 12px 28px -18px rgba(0,0,0,.35);scroll-margin-top:12px}'+
+ '.plc h2{font:700 1.25rem "Saira",sans-serif;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.plc h2:focus{outline:0}.plc .sub{color:#55555D;font-size:.875rem;margin:0 0 10px}'+
+ '.plq{margin:14px 0 0}.plq b{font:700 1rem "Saira",sans-serif;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0 8px}.plq b span{font:400 .75rem "IBM Plex Sans",sans-serif;color:#62626A}'+
+ '.pls{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:6px -10px 0}.pls.r11{grid-template-columns:repeat(6,1fr);gap:6px;margin:6px 0 0}'+
+ '.pls button{min-height:52px;border-radius:12px;border:1px solid #8E8E96;background:#fff;font:700 min(1.25rem,26px) "Saira",sans-serif;color:#0B0B0C;padding:0}'+
+ '.pls button[aria-pressed="true"]{background:#C8102E;color:#fff;border-color:#C8102E}'+
+ '.plb{width:100%;min-height:58px;border:0;border-radius:16px;background:#C8102E;color:#fff;font:700 1.125rem "Saira",sans-serif;margin-top:16px}.plb:disabled{background:#E7A3AE;color:#3A0A12}'+
+ '.plneed{margin:8px 0 0;color:#55555D;font-size:.875rem}'+
+ '.plink{background:none;border:0;color:#0B0B0C;font-size:.875rem;font-weight:600;text-decoration:underline;min-height:44px;padding:0}'+
  '.plok{display:flex;gap:10px;align-items:center;background:#E8F5EC;color:#1F6B43;border-radius:14px;padding:12px 14px;font-weight:600}'+
- '.plmsg{margin-top:10px;padding:10px 12px;border-radius:12px;background:#FBE3E6;color:#A9291F;font-size:14px}.plmsg.ok{background:#E8F5EC;color:#1F6B43}'+
- '.plseg{display:flex;gap:6px;margin:6px 0 10px}.plseg button{flex:1;min-height:44px;border-radius:12px;border:1px solid #D4D4DA;background:#fff;font-weight:600}.plseg button[aria-pressed="true"]{background:#0B0B0C;color:#fff}'+
- '.plchips{display:flex;flex-wrap:wrap;gap:6px}.plchips button{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #D4D4DA;background:#fff;font-weight:600}.plchips button[aria-pressed="true"]{background:#0B0B0C;color:#fff}'+
- '.plbig{font:900 italic 64px/1 "Saira",sans-serif;color:#C8102E}.plrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EEE;gap:10px}.plrow:last-child{border-bottom:0}'+
- '.plrow.me{background:#FBE3E6;margin:0 -10px;padding:10px;border-radius:12px;border:0}.plpos{font:800 italic 20px "Saira",sans-serif;width:34px;color:#62626A}.plpts{font:800 20px "Saira",sans-serif}.plpts.n{color:#A9291F}.plpts.p{color:#1F6B43}'+
+ '.plmsg{margin-top:10px;padding:10px 12px;border-radius:12px;background:#FBE3E6;color:#A9291F;font-size:.875rem}.plmsg.ok{background:#E8F5EC;color:#1F6B43}.plmsg:focus{outline:0}'+
+ '.plseg{display:flex;gap:6px;margin:6px 0 10px}.plseg button{flex:1;min-height:44px;border-radius:12px;border:1px solid #8E8E96;background:#fff;font-weight:600;font-size:.875rem}.plseg button[aria-pressed="true"]{background:#0B0B0C;color:#fff;border-color:#0B0B0C}'+
+ '.plchips{display:flex;flex-wrap:wrap;gap:6px}.plchips button{min-height:44px;min-width:48px;padding:0 14px;border-radius:22px;border:1px solid #8E8E96;background:#fff;font-weight:600;font-size:.875rem}.plchips button[aria-pressed="true"]{background:#0B0B0C;color:#fff;border-color:#0B0B0C}'+
+ '.plbig{font:900 italic min(4rem,80px)/1 "Saira",sans-serif;color:#C8102E}.plrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EEE;gap:10px}.plrow:last-child{border-bottom:0}'+
+ '.plrow.me{background:#FBE3E6;margin:0 -10px;padding:10px;border-radius:12px;border:0}.plpos{font:800 italic 1.25rem "Saira",sans-serif;min-width:34px;color:#62626A}.plpts{font:800 1.25rem "Saira",sans-serif}.plpts.n{color:#A9291F}.plpts.p{color:#1F6B43}'+
  '.plbar{height:12px;border-radius:6px;background:#EEE;overflow:hidden;flex:1}.plbar i{display:block;height:100%;background:#C8102E;border-radius:6px}'+
- '.plpill{display:inline-block;padding:2px 10px;border-radius:11px;font-size:12px;font-weight:700}.plpill.v{background:#DCEFE3;color:#1F6B43}.plpill.a{background:#FBEBC9;color:#7A4A00}.plpill.r{background:#FBE2DE;color:#A9291F}'+
+ '.plpill{display:inline-block;padding:2px 10px;border-radius:11px;font-size:.75rem;font-weight:700}.plpill.v{background:#DCEFE3;color:#1F6B43}.plpill.a{background:#FBEBC9;color:#7A4A00}.plpill.r{background:#FBE2DE;color:#A9291F}'+
  '.plnav{position:fixed;left:0;right:0;bottom:0;background:#0B0B0C;display:flex;padding:8px 8px calc(8px + env(safe-area-inset-bottom));gap:6px;z-index:20}'+
- '.plnav button{flex:1;min-height:54px;border:0;border-radius:14px;background:none;color:#C4C4CB;font:700 15px "Saira",sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}'+
- '.plnav button[aria-pressed="true"]{background:#C8102E;color:#fff}.plnav span{font-size:20px;line-height:1}';
+ '.plnav button{flex:1;min-height:54px;border:0;border-radius:14px;background:none;color:#C4C4CB;font:700 min(.9375rem,20px) "Saira",sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}'+
+ '.plnav button[aria-current="page"]{background:#C8102E;color:#fff}.plnav span{font-size:20px;line-height:1}';
 function plBoot(){
   if(!plOn())return;
   var s=document.createElement('style');s.textContent=PL_CSS;document.head.appendChild(s);
-  document.body.classList.add('pl-mode');
+  document.body.classList.add('pl-mode');document.documentElement.classList.add('pl-html');
   var root=document.createElement('div');root.id='pl';document.body.appendChild(root);
+  /* lo que pasa (enviado, error) se lee en voz alta aunque la pantalla se vuelva a pintar */
+  var live=document.createElement('div');live.id='pl-live';live.className='pl-sr';live.setAttribute('aria-live','polite');document.body.appendChild(live);
   root.addEventListener('click',plClick);
   /* minutos exactos del partido: se apuntan sin repintar (para no perder el teclado) */
   root.addEventListener('input',function(e){var t=e.target;if(!t.hasAttribute||!t.hasAttribute('data-plmin'))return;var n=Math.round(+t.value);PL.min=n>0&&n<=130?n:null;
-    [].forEach.call(root.querySelectorAll('[data-pl="min"]'),function(b){b.setAttribute('aria-pressed','false');});t.style.borderColor=PL.min?'#0B0B0C':'#D4D4DA';t.style.background=PL.min?'#0B0B0C':'#fff';t.style.color=PL.min?'#fff':'#0B0B0C';
-    var sb=root.querySelector('[data-pl="rpesave"]');if(sb)sb.disabled=!(PL.rpe!=null&&PL.min!=null&&!PL.busy);});
+    [].forEach.call(root.querySelectorAll('[data-pl="min"]'),function(b){b.setAttribute('aria-pressed','false');});t.style.borderColor=PL.min?'#0B0B0C':'#8E8E96';t.style.background=PL.min?'#0B0B0C':'#fff';t.style.color=PL.min?'#fff':'#0B0B0C';
+    var bad=String(t.value).trim()!==''&&PL.min==null;t.setAttribute('aria-invalid',bad?'true':'false');var er=root.querySelector('#pl-min-err');if(er)er.hidden=!bad;
+    plNeedUpd();});
+  /* tocar la notificación: abre «Hoy» y baja a la tarjeta que toca (#rpe o #wellness) */
+  if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.go)plGo(e.data.go);});
+  var hs=String(location.hash||'').replace('#','');
   plRender();
+  if(hs==='rpe'||hs==='wellness')setTimeout(function(){plGo(hs);try{history.replaceState(null,'',location.pathname+location.search);}catch(x){}},400);
   if(plPushState()==='ok')setTimeout(function(){plSubscribe(true);},3000);   /* si el móvil cambió el aviso, se vuelve a apuntar solo */
 }
+function plGo(where){
+  if(PL.tab!=='hoy'){PL.tab='hoy';PL.msg=null;}
+  if(where==='wellness')PL.wfAny=true;
+  PL.fk=null;plRender();
+  var h=document.getElementById(where==='wellness'?'pl-wf-h':'pl-rpe-h');if(!h)return;
+  h.scrollIntoView({block:'start'});try{h.focus({preventScroll:true});}catch(x){h.focus();}
+}
+/* el botón de enviar dice qué falta (sin esto, «Enviar» desactivado no explica nada) */
+function plNeedWf(){var f=PL_Q.filter(function(q){return PL.wf[q[0]]==null;}).map(function(q){return q[1];});return f.length?'Falta: '+plJoin(f)+'.':'';}
+function plNeedRpe(needMin){var f=[];if(PL.rpe==null)f.push('el RPE');if(needMin&&PL.min==null)f.push('los minutos');return f.length?(f.length>1||f[0]==='los minutos'?'Faltan ':'Falta ')+plJoin(f)+'.':'';}
+function plJoin(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' y '+a[a.length-1];}
+function plNeedUpd(){var root=document.getElementById('pl');if(!root)return;var sb=root.querySelector('[data-pl="rpesave"]'),nd=root.querySelector('#pl-rpe-need');if(!sb)return;var needMin=!!root.querySelector('[data-plmin]'),t=plNeedRpe(needMin);sb.disabled=!!t||PL.busy;if(nd){nd.textContent=t;nd.hidden=!t;}}
 function plHead(){
   var me=plMe(),key=TEAM_KEY[me.team],d=new Date(),h=d.getHours(),hi=h<14?'Buenos días':h<21?'Buenas tardes':'Buenas noches';
   return '<header class="plh"><div class="k"><span>Mateo QP · '+esc(teamName(me.team))+'</span>'+(key?'<img src="'+CREST[key]+'" alt="">':'')+'</div><h1>'+hi+', '+esc(title(String(me.n).split(' ')[0]))+'</h1><p>'+esc(QPDB.statusText().t)+'</p></header>';
@@ -5967,33 +5995,35 @@ function plHead(){
 var PL_Q=[['f','Fatiga','1 muy fresco · 7 muy cansado'],['s','Sueño','1 dormí genial · 7 fatal'],['e','Estrés','1 nada · 7 mucho'],['d','Dolor muscular','1 nada · 7 mucho']];
 var PL_BORG={0:'Reposo',1:'Muy, muy suave',2:'Suave',3:'Moderado',4:'Algo duro',5:'Duro',6:'Duro',7:'Muy duro',8:'Muy duro',9:'Muy, muy duro',10:'Máximo'};
 function plHoy(){
-  var t0=plDay(0),h=(PL.msg&&PL.msg.k==='ok'&&/Entrenamiento guardado/.test(PL.msg.t)?'<div class="plc"><div class="plok">'+esc(PL.msg.t)+'</div></div>':'')+indCard()+plPushCard(),av=plAviso(),md1=plMatchOn(plDay(-1)),toca=!!md1||(av.modo==='diario'&&plSession(t0).plan.length>0);
+  var t0=plDay(0),h=(PL.msg&&PL.msg.at==='top'?'<div class="plc"><div class="plok" id="pl-msg" tabindex="-1">'+esc(PL.msg.t)+'</div></div>':'')+indCard()+plPushCard(),av=plAviso(),md1=plMatchOn(plDay(-1)),toca=!!md1||(av.modo==='diario'&&plSession(t0).plan.length>0);
   /* wellness: toca el día antes de partido (cada equipo según su partido) */
-  if(plWfDone(t0))h+='<section class="plc"><h2>Wellness de hoy</h2><div class="plok">✓ Ya lo has respondido. ¡Gracias!</div></section>';
+  if(plWfDone(t0))h+='<section class="plc"><h2 id="pl-wf-h" tabindex="-1">Wellness de hoy</h2><div class="plok">✓ Ya lo has respondido. ¡Gracias!</div>'+plMsg('wf')+'</section>';
   else if(!toca&&!PL.wfAny){var nx=plNextMd1();
-    h+='<section class="plc"><h2>Wellness</h2><p class="sub">Hoy no toca.'+(nx?' El próximo: <b>'+esc(wd(nx.t-864e5)+' '+fs(nx.t-864e5))+'</b>, el día antes del partido vs '+esc(plG(nx.r,'rival')||'rival')+'.':'')+'</p><button class="linkbtn" data-pl="wfany" style="background:none;border:0;color:#55555D;text-decoration:underline;min-height:44px;padding:0">Responder igualmente</button></section>';}
+    h+='<section class="plc"><h2 id="pl-wf-h" tabindex="-1">Wellness</h2><p class="sub">Hoy no toca.'+(nx?' El próximo: <b>'+esc(wd(nx.t-864e5)+' '+fs(nx.t-864e5))+'</b>, el día antes del partido vs '+esc(plG(nx.r,'rival')||'rival')+'.':'')+'</p><button class="plink" data-pl="wfany">Responder igualmente</button></section>';}
   else{
-    h+='<section class="plc"><h2>'+(md1?'Mañana hay partido: ¿cómo estás?':'¿Cómo estás hoy?')+'</h2><p class="sub">'+(md1?'Partido vs '+esc(plG(md1,'rival')||'rival')+'. ':'')+'Tarda 10 segundos. 1 es lo mejor, 7 lo peor.</p>';
-    PL_Q.forEach(function(q){h+='<div class="plq"><b>'+q[1]+'<span>'+q[2]+'</span></b><div class="pls">';for(var k=1;k<=7;k++)h+='<button data-pl="wf" data-v="'+q[0]+'.'+k+'" aria-pressed="'+(PL.wf[q[0]]===k)+'">'+k+'</button>';h+='</div></div>';});
-    var ok=PL_Q.every(function(q){return PL.wf[q[0]]!=null;});
-    h+='<button class="plb" data-pl="wfsave"'+(ok&&!PL.busy?'':' disabled')+'>Enviar</button></section>';
+    h+='<section class="plc"><h2 id="pl-wf-h" tabindex="-1">'+(md1?'Mañana hay partido: ¿cómo estás?':'¿Cómo estás hoy?')+'</h2><p class="sub">'+(md1?'Partido vs '+esc(plG(md1,'rival')||'rival')+'. ':'')+'Tarda 10 segundos. 1 es lo mejor, 7 lo peor.</p>';
+    PL_Q.forEach(function(q){h+='<div class="plq" role="group" aria-labelledby="plq-'+q[0]+'"><b id="plq-'+q[0]+'">'+q[1]+'<span>'+q[2]+'</span></b><div class="pls">';for(var k=1;k<=7;k++)h+='<button data-pl="wf" data-v="'+q[0]+'.'+k+'" aria-pressed="'+(PL.wf[q[0]]===k)+'" aria-label="'+q[1]+': '+k+' de 7'+(k===1?', lo mejor':k===7?', lo peor':'')+'">'+k+'</button>';h+='</div></div>';});
+    var nw=plNeedWf();
+    h+='<button class="plb" data-pl="wfsave"'+(!nw&&!PL.busy?'':' disabled')+(nw?' aria-describedby="pl-wf-need"':'')+'>Enviar</button>'+(nw?'<p class="plneed" id="pl-wf-need">'+nw+'</p>':'')+plMsg('wf')+'</section>';
   }
   /* RPE */
   var t=plDay(PL.day),S=plSession(t),done=plRpeDone(t),m=S.match;
-  h+='<section class="plc"><h2>'+(m?'RPE del partido':'RPE final de la sesión')+'</h2><div class="plseg"><button data-pl="day" data-v="0" aria-pressed="'+(PL.day===0)+'">Hoy</button><button data-pl="day" data-v="1" aria-pressed="'+(PL.day===1)+'">Ayer</button></div>';
+  h+='<section class="plc"><h2 id="pl-rpe-h" tabindex="-1">'+(m?'RPE del partido':'RPE final de la sesión')+'</h2><div class="plseg" role="group" aria-label="Día"><button data-pl="day" data-v="0" aria-pressed="'+(PL.day===0)+'">Hoy</button><button data-pl="day" data-v="1" aria-pressed="'+(PL.day===1)+'">Ayer</button></div>';
   if(m)h+='<p class="sub">Partido vs <b>'+esc(plG(m,'rival')||'rival')+'</b>'+(plG(m,'competicion')?' · '+esc(plG(m,'competicion')):'')+'</p>';
   else h+='<p class="sub">Valora el entrenamiento <b>entero</b>, no solo el último ejercicio. Mejor unos 30 minutos después de acabar.</p>'+(S.plan.length?'<p class="sub" style="margin-top:-4px">'+esc(S.blocks.slice(0,4).join(' · '))+(S.blocks.length>4?'…':'')+' · <b>'+S.mins+' min</b> <span style="color:#62626A">(si la sesión dura más o menos, Mateo pone la duración real)</span></p>':'<p class="sub" style="margin-top:-4px">No hay sesión planificada ese día. Si entrenaste, puedes darlo igual: Mateo pone la duración.</p>');
   if(done)h+='<div class="plok">✓ '+(done.own?'RPE enviado':'Mateo ya registró tu RPE final')+(done.rpe!=null?' · '+f1(done.rpe):'')+'. ¡Gracias!</div>';
   else{
-    h+='<div class="plq"><b>'+(m?'¿Cómo de duro ha sido el partido?':'¿Cómo de dura ha sido la sesión?')+'<span>'+(PL.rpe!=null?PL.rpe+' · '+PL_BORG[PL.rpe]:'0 reposo · 10 máximo')+'</span></b><div class="pls r11">';for(var k=0;k<=10;k++)h+='<button data-pl="rpe" data-v="'+k+'" aria-pressed="'+(PL.rpe===k)+'">'+k+'</button>';h+='</div></div>';
+    var rq=m?'¿Cómo de duro ha sido el partido?':'¿Cómo de dura ha sido la sesión?';
+    h+='<div class="plq" role="group" aria-labelledby="plq-rpe"><b id="plq-rpe">'+rq+'<span>'+(PL.rpe!=null?PL.rpe+' · '+PL_BORG[PL.rpe]:'0 reposo · 10 máximo')+'</span></b><div class="pls r11">';for(var k=0;k<=10;k++)h+='<button data-pl="rpe" data-v="'+k+'" aria-pressed="'+(PL.rpe===k)+'" aria-label="RPE '+k+', '+PL_BORG[k].toLowerCase()+'">'+k+'</button>';h+='</div></div>';
     var needMin=!!m;   /* en el entreno la duración no la pone el jugador: la del microciclo, y la corrige la que Mateo registra en la app */
     if(needMin){var opts=[90,80,70,60,45,30,15],own=PL.min!=null&&PL.min>0&&opts.indexOf(PL.min)<0;
-      h+='<div class="plq"><b>Minutos que has jugado<span>'+(PL.min==null?'toca o escribe':PL.min===0?'no jugaste':PL.min+' min')+'</span></b><div class="plchips">'+opts.map(function(x){return '<button data-pl="min" data-v="'+x+'" aria-pressed="'+(PL.min===x)+'">'+x+'\'</button>';}).join('')+
-        '<input data-plmin type="number" inputmode="numeric" min="1" max="130" step="1" placeholder="Otro" aria-label="Minutos exactos" value="'+(own?PL.min:'')+'" style="width:84px;min-height:44px;border-radius:22px;border:1px solid '+(own?'#0B0B0C':'#D4D4DA')+';background:'+(own?'#0B0B0C':'#fff')+';color:'+(own?'#fff':'#0B0B0C')+';padding:0 12px;font-weight:600;font-size:15px">'+
-        '<button data-pl="min" data-v="0" aria-pressed="'+(PL.min===0)+'">No jugué</button></div></div>';}
-    h+='<button class="plb" data-pl="rpesave"'+(PL.rpe!=null&&(!needMin||PL.min!=null)&&!PL.busy?'':' disabled')+'>'+(m?'Enviar RPE del partido':'Enviar RPE final')+'</button>';
+      h+='<div class="plq" role="group" aria-labelledby="plq-min"><b id="plq-min">Minutos que has jugado<span>'+(PL.min==null?'toca o escribe':PL.min===0?'no jugaste':PL.min+' min')+'</span></b><div class="plchips">'+opts.map(function(x){return '<button data-pl="min" data-v="'+x+'" aria-pressed="'+(PL.min===x)+'" aria-label="'+x+' minutos">'+x+'\'</button>';}).join('')+
+        '<input data-plmin type="number" inputmode="numeric" min="1" max="130" step="1" placeholder="Otro" aria-label="Otros minutos (de 1 a 130)" aria-describedby="pl-min-err" value="'+(own?PL.min:'')+'" style="width:84px;min-height:44px;border-radius:22px;border:1px solid '+(own?'#0B0B0C':'#8E8E96')+';background:'+(own?'#0B0B0C':'#fff')+';color:'+(own?'#fff':'#0B0B0C')+';padding:0 12px;font-weight:600;font-size:1rem">'+
+        '<button data-pl="min" data-v="0" aria-pressed="'+(PL.min===0)+'">No jugué</button></div><p class="plneed" id="pl-min-err" role="alert" hidden style="color:#A9291F">Escribe un número de 1 a 130.</p></div>';}
+    var nr=plNeedRpe(needMin);
+    h+='<button class="plb" data-pl="rpesave"'+(!nr&&!PL.busy?'':' disabled')+' aria-describedby="pl-rpe-need">'+(m?'Enviar RPE del partido':'Enviar RPE final')+'</button><p class="plneed" id="pl-rpe-need"'+(nr?'':' hidden')+'>'+nr+'</p>';
   }
-  h+=(PL.msg?'<div class="plmsg '+(PL.msg.k||'')+'">'+esc(PL.msg.t)+'</div>':'')+'</section>';
+  h+=plMsg('rpe')+'</section>';
   return h;
 }
 function plDatos(){
@@ -6021,11 +6051,19 @@ function plPuntos(){
 function plRender(){
   var root=document.getElementById('pl');if(!root)return;
   var body=PL.tab==='datos'?plDatos():PL.tab==='puntos'?plPuntos():plHoy();
-  root.innerHTML=plHead()+body+'<p style="text-align:center;color:#62626A;font-size:12px;margin:18px">Solo tú ves tus datos.</p>'+
-    '<nav class="plnav"><button data-pl="tab" data-v="hoy" aria-pressed="'+(PL.tab==='hoy')+'"><span>✓</span>Hoy</button><button data-pl="tab" data-v="datos" aria-pressed="'+(PL.tab==='datos')+'"><span>📈</span>Mis datos</button><button data-pl="tab" data-v="puntos" aria-pressed="'+(PL.tab==='puntos')+'"><span>🏆</span>Puntos</button><button data-pl="me"><span>👤</span>Yo</button></nav>';
+  var cur=function(k){return PL.tab===k?' aria-current="page"':'';};
+  root.innerHTML='<main>'+plHead()+body+'<p style="text-align:center;color:#62626A;font-size:.75rem;margin:18px">Solo tú ves tus datos.</p></main>'+
+    '<nav class="plnav" aria-label="Secciones"><button data-pl="tab" data-v="hoy"'+cur('hoy')+'><span aria-hidden="true">✓</span>Hoy</button><button data-pl="tab" data-v="datos"'+cur('datos')+'><span aria-hidden="true">📈</span>Mis datos</button><button data-pl="tab" data-v="puntos"'+cur('puntos')+'><span aria-hidden="true">🏆</span>Puntos</button><button data-pl="me" aria-label="Yo: mi cuenta y ajustes"><span aria-hidden="true">👤</span>Yo</button></nav>';
+  /* el foco no se pierde al volver a pintar: vuelve al botón tocado; si ya no está (se ha enviado), al mensaje */
+  var fk=PL.fk,el=null;
+  if(fk){el=root.querySelector('[data-pl="'+fk[0]+'"]'+(fk[1]!=null?'[data-v="'+String(fk[1]).replace(/"/g,'\\"')+'"]':''));if(el&&el.disabled)el=null;}
+  var mg=root.querySelector('#pl-msg');
+  if(PL.msg&&PL.msg!==PL._said){PL._said=PL.msg;var lv=document.getElementById('pl-live');if(lv){lv.textContent='';setTimeout(function(){lv.textContent=PL.msg?PL.msg.t:'';},60);}if(mg&&fk&&!el)el=mg;}
+  if(el&&fk){try{el.focus({preventScroll:true});}catch(x){el.focus();}}
 }
 function plClick(e){
   var b=e.target.closest('[data-pl]');if(!b)return;var a=b.getAttribute('data-pl'),v=b.getAttribute('data-v');
+  PL.fk=[a,v];
   if(a==='tab'){PL.tab=v;PL.msg=null;plRender();window.scrollTo(0,0);return;}
   if(a==='me'){QPDB.openSettings();return;}
   if(a==='push'){plSubscribe(false);return;}
@@ -6040,7 +6078,7 @@ function plClick(e){
   if(a==='wfsave'){
     var t=plDay(0),d=new Date(),row=[fd(t)+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()),me.n,PL.wf.f,PL.wf.s,PL.wf.e,PL.wf.d,'','',me.team,'APP JUGADOR'];
     PL.busy=true;plRender();
-    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:"'Respuestas de formulario 1'!A1",values:[row]}).then(function(){plFlag('wf-'+t,'1');PL.wf={};PL.msg={k:'ok',t:'Wellness enviado. +1 punto 💪'};},function(er){PL.msg={t:(er&&er.message)||'No se pudo guardar'};}).then(function(){PL.busy=false;plRender();});
+    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:"'Respuestas de formulario 1'!A1",values:[row]}).then(function(){plFlag('wf-'+t,'1');PL.wf={};PL.msg={at:'wf',k:'ok',t:'Wellness enviado. +1 punto 💪'};},function(er){PL.msg={at:'wf',t:(er&&er.message)||'No se pudo guardar el wellness. Vuelve a tocar «Enviar».'};}).then(function(){PL.busy=false;plRender();});
     return;
   }
   if(a==='rpesave'){
@@ -6048,7 +6086,7 @@ function plClick(e){
     if(m){var rv=plG(m,'rival'),cp=plG(m,'competicion');o={fecha:fd(t2),team:me.team,j:me.n,tipo:'Partido',ex:'Partido'+(cp?' · '+cp:''),min:PL.min,rpe:PL.rpe,n:rv?'vs '+rv:'',bloque:'Partido'+(rv?' vs '+rv:''),parte:'Partido'};}
     else o={fecha:fd(t2),team:me.team,j:me.n,tipo:'Otro',ex:'RPE final',min:S.plan.length?S.mins:'',rpe:PL.rpe,bloque:'Sesión completa'};
     PL.busy=true;plRender();
-    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:'CARGA!A1',values:[sheetRow(o)]}).then(function(){plFlag('rpe-'+t2,'1');PL.rpe=null;PL.min=null;PL.msg={k:'ok',t:'RPE enviado. +1 punto 💪'};},function(er){PL.msg={t:(er&&er.message)||'No se pudo guardar'};}).then(function(){PL.busy=false;plRender();});
+    mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:'CARGA!A1',values:[sheetRow(o)]}).then(function(){plFlag('rpe-'+t2,'1');PL.rpe=null;PL.min=null;PL.msg={k:'ok',t:'RPE enviado. +1 punto 💪'};},function(er){PL.msg={t:(er&&er.message)||'No se pudo guardar el RPE. Vuelve a tocar «Enviar».'};}).then(function(){PL.busy=false;plRender();});
   }
 }
 
@@ -6180,7 +6218,7 @@ function indClick(e){
     IND.busy=true;IND.msg=null;indRender();
     var o={fecha:fd(t2),team:me2.team,j:me2.n,tipo:'Fuerza',ex:'Sesión individual',min:IND.fin.min,rpe:IND.fin.rpe,bloque:'Individual · '+IND.ses,parte:'Individual',n:rows.length+' series'};
     Promise.all([rows.length?mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:'IND_REG!A1',values:rows}):Promise.resolve(),mcp.callTool(SERVER,'append_values',{spreadsheetId:SHEET_ID,range:'CARGA!A1',values:[sheetRow(o)]})])
-    .then(function(){plFlag('ind-'+t2+'-'+norm(IND.ses),'1');try{localStorage.removeItem(indKey());}catch(e){}IND.busy=false;indClose();PL.msg={k:'ok',t:'Entrenamiento guardado: '+rows.length+' series. ¡Buen trabajo! 💪'};plRender();},
+    .then(function(){plFlag('ind-'+t2+'-'+norm(IND.ses),'1');try{localStorage.removeItem(indKey());}catch(e){}IND.busy=false;indClose();PL.msg={at:'top',k:'ok',t:'Entrenamiento guardado: '+rows.length+' series. ¡Buen trabajo! 💪'};plRender();},
       function(er){IND.busy=false;IND.msg={t:(er&&er.message)||'No se pudo guardar. Tus datos siguen aquí: inténtalo otra vez.'};indRender();});
   }
 }

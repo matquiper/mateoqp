@@ -1,5 +1,5 @@
 /* Mateo QP · funciona sin conexión. La app se guarda en el iPad; los datos nunca pasan por esta caché. */
-var V = 'mqp-v10';
+var V = 'mqp-v11';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192-v2.png', './icons/icon-512-v2.png', './icons/maskable-512-v2.png', './icons/apple-touch-icon-v2.png'];
 self.addEventListener('install', function (e) { e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); })); });
 self.addEventListener('activate', function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (x) { return x !== V; }).map(function (x) { return caches.delete(x); })); }).then(function () { return self.clients.claim(); })); });
@@ -51,13 +51,15 @@ self.addEventListener('push', function (e) {
     var txt = !rpe ? 'Toca para responder el wellness de hoy. Tarda 10 segundos.' : par ? '¿Cómo de duro ha sido el partido? Pon tu RPE y los minutos que has jugado.' : '¿Cómo de dura ha sido la sesión de hoy? Toca y responde tu RPE final.';
     return self.registration.showNotification(tit,
       { body: txt,
-        icon: './icons/icon-192-v2.png', badge: './icons/icon-192-v2.png', tag: rpe ? 'rpe' : 'wellness', renotify: true, data: { url: './' } });
+        icon: './icons/icon-192-v2.png', badge: './icons/icon-192-v2.png', tag: rpe ? 'rpe' : 'wellness', renotify: true, data: { go: rpe ? 'rpe' : 'wellness' } });
   }));
 });
+/* al tocar el aviso: la app se abre (o se pone delante) en «Hoy», justo en la tarjeta del wellness o del RPE */
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
+  var go = (e.notification.data && e.notification.data.go) || 'rpe';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cs) {
-    for (var i = 0; i < cs.length; i++) { if ('focus' in cs[i]) return cs[i].focus(); }
-    return self.clients.openWindow('./');
+    for (var i = 0; i < cs.length; i++) { if ('focus' in cs[i]) { cs[i].postMessage({ go: go }); return cs[i].focus(); } }
+    return self.clients.openWindow('./#' + go);
   }));
 });
